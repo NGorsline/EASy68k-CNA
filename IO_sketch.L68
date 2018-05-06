@@ -1,0 +1,91 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/5/2018 5:53:20 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10  * Put program code here
+00001000  43F9 00001096             11      LEA     buffer,A1       * Load buffers affective address into A1
+00001006  103C 0002                 12      MOVE.B  #2,D0           * takes in value as a string 
+0000100A  4E4F                      13      TRAP    #15         
+0000100C                            14      
+0000100C                            15  *** Need to first check if D1 is a valid size of minimum 4 
+0000100C  B27C 0004                 16      CMP     #4,D1       
+00001010  6D00 0058                 17      BLT     ERROR_1         * invalid start address  
+00001014                            18  *    ADDI.B  #1,D4           * offset our counter to start at 1
+00001014                            19   
+00001014                            20  READING_LOOP       
+00001014  1619                      21      MOVE.B  (A1)+,D3        * store the next thingy B
+00001016                            22  *** Need to check for proper hex conversion 
+00001016                            23  RANGE_1
+00001016  B67C 002F                 24      CMP     #$2F,D3         * Range of numbers: (2F >= 3A) then subtract 30    
+0000101A  6E00 0006                 25      BGT     SEC_COND        * check if it's in range for x > 2F
+0000101E  6000 004A                 26      BRA     ERROR_1         * First condition not met, go to bad input error     
+00001022                            27  SEC_COND                    * Second condition for Range_1 checking
+00001022  B67C 003A                 28      CMP     #$3A,D3
+00001026  6D00 0020                 29      BLT     MATH_DIGITS     * If condition for the range was met, do the math
+0000102A  4EF9 00001030             30      JMP     RANGE_2         * Second condition was not met, jump to second check 
+00001030                            31  RANGE_2
+00001030  B67C 0041                 32      CMP     #$41,D3
+00001034  6C00 0006                 33      BGE     SEC_COND_2  
+00001038  6000 0030                 34      BRA     ERROR_1         * First condition not met, D3 < 41 = symbols. Go to bad input error
+0000103C                            35  SEC_COND_2
+0000103C  B67C 0046                 36      CMP     #$46,D3
+00001040  6F00 0010                 37      BLE     MATH_HEX        * Condition was met for A-F     
+00001044  6000 0024                 38      BRA     ERROR_1         * Greater than 46 = out of 16-bit system
+00001048                            39  MATH_DIGITS                 * Convert a string digit into a hex value
+00001048  0403 0030                 40      SUBI.B  #$30,D3
+0000104C  4EF9 0000105C             41      JMP     SHIFTS          * After this routine is finished, complete shifts/adds
+00001052                            42  MATH_HEX                    * Convert a string character into a hex value
+00001052  0403 0037                 43      SUBI.B  #$37,D3    
+00001056  4EF9 0000105C             44      JMP     SHIFTS          * Convert a string character into a hex value
+0000105C                            45  SHIFTS                      * Instructions for shifting data into correct register
+0000105C  E98A                      46      LSL.L   #4,D2           * Initial value in D2 shifted hexabit over to the left to make room   
+0000105E  D403                      47      ADD.B   D3,D2           * Add modified value from D3 into D2.
+00001060                            48      
+00001060  5204                      49      ADD.B   #1,D4           * Increment counter by 1 
+00001062  B244                      50      CMP     D4,D1           * Check if we have already reached the end of the input. D4 = counter
+00001064  66AE                      51      BNE     READING_LOOP    * Continue back to the loop if D4 != D1  
+00001066                            52     
+00001066  6000 0032                 53      BRA     END_NOW         * Temporary way of preventing Error_1 from being executed every time
+0000106A                            54  ERROR_1                     * invalid start address   
+0000106A  43F9 0000107A             55      LEA     INVALID_INPUT,A1
+00001070  103C 000D                 56      MOVE.B  #13,D0
+00001074  4E4F                      57      TRAP    #15
+00001076                            58  
+00001076  FFFF FFFF                 59      SIMHALT             ; halt simulator
+0000107A                            60  
+0000107A                            61  * Put variables and constants here
+0000107A                            62  
+0000107A= 49 6E 76 61 6C 69 ...     63  INVALID_INPUT DC.B  'Invalid input! Out of Range',0
+00001096= 00000001                  64  buffer  DC.L    1
+0000109A                            65  END_NOW
+0000109A                            66      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+BUFFER              1096
+END_NOW             109A
+ERROR_1             106A
+INVALID_INPUT       107A
+MATH_DIGITS         1048
+MATH_HEX            1052
+RANGE_1             1016
+RANGE_2             1030
+READING_LOOP        1014
+SEC_COND            1022
+SEC_COND_2          103C
+SHIFTS              105C
+START               1000
