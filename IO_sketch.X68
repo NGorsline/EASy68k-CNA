@@ -40,7 +40,7 @@ START:                  ; first instruction of program
     
     JSR     CONVERSION_LOOP * convert the ending address
     MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
-    CMP     A5,A6           * check if beginning address is >= end address. If so, display error
+    CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
     BGE     ERROR_END_LTE_BEG
     BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
     
@@ -178,7 +178,8 @@ END_NOW
 
 
 
+
 *~Font name~Courier New~
-*~Font size~10~
+*~Font size~12~
 *~Tab type~1~
 *~Tab size~4~

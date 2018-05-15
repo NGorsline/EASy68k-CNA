@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/7/2018 4:15:59 PM
+Created On: 5/15/2018 12:58:25 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :  Disassembler I/O 
@@ -11,169 +11,173 @@ Created On: 5/7/2018 4:15:59 PM
 00001000                             7      ORG    $1000
 00001000                             8  START:                  ; first instruction of program
 00001000                             9  
-00001000  47F8 6010                 10      LEA     $6010, A3
-00001004  26BC ABCD1234             11      MOVE.L  #$ABCD1234,(A3)
-0000100A                            12  
-0000100A                            13  * Put program code here
-0000100A  43F9 00001190             14      LEA     ADDR_PRMPT_STRT,A1
-00001010  103C 000E                 15      MOVE.B  #14,D0
-00001014  4E4F                      16      TRAP    #15
-00001016                            17  
-00001016  43F9 00001202             18      LEA     buffer,A1       * Load buffers effective address into A1
-0000101C  103C 0002                 19      MOVE.B  #2,D0           * get the starting address from the user as a string
-00001020  4E4F                      20      TRAP    #15         
-00001022                            21      
-00001022                            22  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
-00001022  B27C 0004                 23      CMP     #4,D1           * minimum of a word for the address
-00001026  6D00 008E                 24      BLT     ERROR_INV_INP   * invalid start address  
-0000102A                            25      
-0000102A  4EB9 00001062             26      JSR     CONVERSION_LOOP * convert the starting address
-00001030                            27      
-00001030                            28  *** FULL STARTING ADDRESS HAS BEEN CONVERTED, STORE IN A6 AND GET ENDING ADDRESSS
-00001030  2C42                      29      MOVEA.L D2,A6           * move converted addr to A6 (A6 acts as iterator while disassembling)
-00001032  4282                      30      CLR.L   D2              * clear register D2 in preparation to hold the converted end address
-00001034  4284                      31      CLR.L   D4              * clear register D4 to start the counter at 0 again
-00001036                            32      
-00001036  43F9 000011B3             33      LEA     ADDR_PRMPT_END,A1
-0000103C  103C 000E                 34      MOVE.B  #14,D0
-00001040  4E4F                      35      TRAP    #15
-00001042                            36      
-00001042  103C 0002                 37      MOVE.B  #2,D0           * get the ending address from the user as a string
-00001046  4E4F                      38      TRAP    #15
-00001048                            39      
-00001048                            40  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
-00001048  B27C 0004                 41      CMP     #4,D1           * minimum of a word for the address
-0000104C  6D00 0068                 42      BLT     ERROR_INV_INP   * invalid end address
-00001050                            43      
-00001050  4EB9 00001062             44      JSR     CONVERSION_LOOP * convert the ending address
-00001056  2A42                      45      MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
-00001058  BCCD                      46      CMP     A5,A6           * check if beginning address is >= end address. If so, display error
-0000105A  6C00 006A                 47      BGE     ERROR_END_LTE_BEG
-0000105E  6000 0076                 48      BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
-00001062                            49      
-00001062                            50  
-00001062                            51  
-00001062                            52  *    ADDI.B  #1,D4           * offset our counter to start at 1
-00001062                            53  
-00001062                            54  
-00001062                            55   
-00001062                            56  CONVERSION_LOOP       
-00001062  1619                      57      MOVE.B  (A1)+,D3        * store the next thingy B
-00001064                            58  *** Need to check for proper hex conversion 
-00001064                            59  
-00001064                            60  CHECK_NUM_MIN     ;; Checks if number is >= 30 (0) in ASCII
-00001064  B67C 0030                 61      CMP     #ASC_NUM_MIN,D3 * Range of ASCII numbers: (2F >= 3A)[2F,3A] then subtract 30    
-00001068  6C00 0006                 62      BGE     CHECK_NUM_MAX   * check if it's in range for x > 2F
-0000106C  6000 0048                 63      BRA     ERROR_INV_INP   * First condition not met, go to bad input error 
-00001070                            64      
-00001070                            65  CHECK_NUM_MAX     ;; Checks if number is <= 39 (9) in ASCII
-00001070  B67C 0039                 66      CMP     #ASC_NUM_MAX,D3
-00001074  6F00 0020                 67      BLE     ASC_TO_NUM      * If condition for the range was met, do the math
-00001078  4EF9 0000107E             68      JMP     CHECK_CHAR_MIN  * Second condition was not met, check if a character
-0000107E                            69      
-0000107E                            70  CHECK_CHAR_MIN    ;; Checks if number is >= 41 (A) in ASCII
-0000107E  B67C 0041                 71      CMP     #ASC_CHAR_MIN,D3
-00001082  6C00 0006                 72      BGE     CHECK_CHAR_MAX  
-00001086  6000 002E                 73      BRA     ERROR_INV_INP   * First condition not met, D3 < 41 = symbols. Go to bad input error
-0000108A                            74      
-0000108A                            75  CHECK_CHAR_MAX    ;; Checks if number is <= 46 (F) in ASCII
-0000108A  B67C 0046                 76      CMP     #ASC_CHAR_MAX,D3
-0000108E  6F00 0010                 77      BLE     ASC_TO_CHAR     * Condition was met for A-F     
-00001092  6000 0022                 78      BRA     ERROR_INV_INP   * Greater than 46 = out of 16-bit system
-00001096                            79      
-00001096                            80  ASC_TO_NUM        ;; Converts a string digit into a hex value
-00001096  0403 0030                 81      SUBI.B  #$30,D3
-0000109A  4EF9 000010AA             82      JMP     SHIFTS          * After this routine is finished, complete shifts/adds
-000010A0                            83      
-000010A0                            84  ASC_TO_CHAR       ;; Converts a string character into a hex value
-000010A0  0403 0037                 85      SUBI.B  #$37,D3    
-000010A4  4EF9 000010AA             86      JMP     SHIFTS          * Convert a string character into a hex value
-000010AA                            87      
-000010AA                            88  SHIFTS            ;; Shifts D2 left by four bits to make room for the newly converted hexabit
-000010AA  E98A                      89      LSL.L   #4,D2           * Initial value in D2 shifted hexabit over to the left to make room   
-000010AC  D403                      90      ADD.B   D3,D2           * Add modified value from D3 into D2.
-000010AE                            91      
-000010AE  5204                      92      ADD.B   #1,D4           * Increment counter by 1 
-000010B0  B244                      93      CMP     D4,D1           * Check if we have already reached the end of the input. D4 = counter
-000010B2  66AE                      94      BNE     CONVERSION_LOOP * Continue back to the loop if D4 != D1  
-000010B4  4E75                      95      RTS
-000010B6                            96      
-000010B6                            97      
-000010B6                            98  ERROR_INV_INP     ;; Prints the INVALID_INPUT error message to the console
-000010B6  43F9 00001130             99      LEA     INVALID_INPUT,A1
-000010BC  103C 000D                100      MOVE.B  #13,D0
-000010C0  4E4F                     101      TRAP    #15
-000010C2  6000 0142                102      BRA     END_NOW
-000010C6                           103      
-000010C6                           104  ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message to the console.
-000010C6  43F9 0000114D            105      LEA     END_LTE_BEG,A1
-000010CC  103C 000D                106      MOVE.B  #13,D0
-000010D0  4E4F                     107      TRAP    #15
-000010D2  6000 0132                108      BRA     END_NOW
-000010D6                           109      
-000010D6                           110  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
-000010D6  43F9 000011D5            111      LEA     PRINT_IT_STRING,A1
-000010DC  103C 000D                112      MOVE.B  #13,D0
-000010E0  4E4F                     113      TRAP    #15
-000010E2                           114      
-000010E2                           115  PRINT_IT_LOOP
-000010E2  103C 000F                116      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-000010E6  143C 0010                117      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-000010EA                           118      * PRINT THE CURRENT ADDRESS
-000010EA  220E                     119      MOVE.L  A6,D1
-000010EC  4E4F                     120      TRAP    #15
-000010EE  4281                     121      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-000010F0                           122      
-000010F0  43F9 0000112D            123      LEA     COLON_SPACE,A1
-000010F6  103C 000E                124      MOVE.B  #14,D0
-000010FA  4E4F                     125      TRAP    #15
-000010FC                           126      
-000010FC  221E                     127      MOVE.L  (A6)+,D1    * move the byte data at the pointer into D1 and increment
-000010FE  103C 000F                128      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
-00001102  4E4F                     129      TRAP    #15
-00001104                           130      
-00001104                           131      * Print a new line
-00001104  43F9 00001124            132      LEA     NEW_LINE,A1
-0000110A  103C 000D                133      MOVE.B  #13,D0
-0000110E  4E4F                     134      TRAP    #15
-00001110                           135      
-00001110                           136      * Check if end address has been reached
-00001110  BDCD                     137      CMP.L   A5,A6
-00001112  6FCE                     138      BLE     PRINT_IT_LOOP
-00001114                           139      
-00001114  43F9 00001127            140      LEA     DONE_MSG,A1
-0000111A  103C 000D                141      MOVE.B  #13,D0
-0000111E  4E4F                     142      TRAP    #15
-00001120                           143  
-00001120  FFFF FFFF                144      SIMHALT             ; halt simulator
-00001124                           145  
-00001124                           146  * Put variables and constants here
-00001124                           147  
-00001124                           148  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
-00001124                           149  *** real hex value (depending on whether it's a digit or a character).
-00001124  =00000030                150  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
-00001124  =00000039                151  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
-00001124  =00000041                152  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
-00001124  =00000046                153  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
-00001124                           154  
-00001124                           155  *** Message strings
-00001124                           156      * Temporary; used for debugging and testing
-00001124= 00 0D 0A                 157  NEW_LINE        DC.B    '',0,CR,LF
-00001127                           158      * Temporary; used for debugging and testing
-00001127= 44 6F 6E 65 2E 00        159  DONE_MSG        DC.B    'Done.',0
-0000112D                           160      * Temporary; used for debugging and testing
-0000112D= 3A 20 00                 161  COLON_SPACE     DC.B    ': ',0
-00001130= 49 6E 76 61 6C 69 ...    162  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
-0000114D= 49 6E 76 61 6C 69 ...    163  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-00001190= 45 6E 74 65 72 20 ...    164  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
-000011B3= 45 6E 74 65 72 20 ...    165  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
-000011D5= 49 20 61 6D 20 61 ...    166  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
-00001202  =0000000A                167  LF              EQU      $0A
-00001202  =0000000D                168  CR              EQU      $0D
-00001202                           169  
-00001202= 00000001                 170  buffer  DC.L    1
-00001206                           171  END_NOW
-00001206                           172      END    START        ; last line of source
+00001000                            10  * Put program code here
+00001000  43F9 00001186             11      LEA     ADDR_PRMPT_STRT,A1
+00001006  103C 000E                 12      MOVE.B  #14,D0
+0000100A  4E4F                      13      TRAP    #15
+0000100C                            14  
+0000100C  43F9 000011F8             15      LEA     buffer,A1       * Load buffers effective address into A1
+00001012  103C 0002                 16      MOVE.B  #2,D0           * get the starting address from the user as a string
+00001016  4E4F                      17      TRAP    #15         
+00001018                            18      
+00001018                            19  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
+00001018  B27C 0004                 20      CMP     #4,D1           * minimum of a word for the address
+0000101C  6D00 008E                 21      BLT     ERROR_INV_INP   * invalid start address  
+00001020                            22      
+00001020  4EB9 00001058             23      JSR     CONVERSION_LOOP * convert the starting address
+00001026                            24      
+00001026                            25  *** FULL STARTING ADDRESS HAS BEEN CONVERTED, STORE IN A6 AND GET ENDING ADDRESSS
+00001026  2C42                      26      MOVEA.L D2,A6           * move converted addr to A6 (A6 acts as iterator while disassembling)
+00001028  4282                      27      CLR.L   D2              * clear register D2 in preparation to hold the converted end address
+0000102A  4284                      28      CLR.L   D4              * clear register D4 to start the counter at 0 again
+0000102C                            29      
+0000102C  43F9 000011A9             30      LEA     ADDR_PRMPT_END,A1
+00001032  103C 000E                 31      MOVE.B  #14,D0
+00001036  4E4F                      32      TRAP    #15
+00001038                            33      
+00001038  103C 0002                 34      MOVE.B  #2,D0           * get the ending address from the user as a string
+0000103C  4E4F                      35      TRAP    #15
+0000103E                            36      
+0000103E                            37  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
+0000103E  B27C 0004                 38      CMP     #4,D1           * minimum of a word for the address
+00001042  6D00 0068                 39      BLT     ERROR_INV_INP   * invalid end address
+00001046                            40      
+00001046  4EB9 00001058             41      JSR     CONVERSION_LOOP * convert the ending address
+0000104C  2A42                      42      MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
+0000104E  BDCD                      43      CMPA.L   A5,A6           * check if beginning address is >= end address. If so, display error
+00001050  6C00 006A                 44      BGE     ERROR_END_LTE_BEG
+00001054  6000 0076                 45      BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
+00001058                            46      
+00001058                            47  
+00001058                            48  
+00001058                            49  *    ADDI.B  #1,D4           * offset our counter to start at 1
+00001058                            50  
+00001058                            51  
+00001058                            52  ;; ~~~~~~~~BEGINNING OF CONVERSION SUBROUTINE~~~~~~~~
+00001058                            53  CONVERSION_LOOP       
+00001058  1619                      54      MOVE.B  (A1)+,D3        * store the next thingy B
+0000105A                            55  *** Need to check for proper hex conversion 
+0000105A                            56  
+0000105A                            57  CHECK_NUM_MIN     ;; Checks if number is >= 30 (0) in ASCII
+0000105A  B67C 0030                 58      CMP     #ASC_NUM_MIN,D3 * Range of ASCII numbers: (2F >= 3A)[2F,3A] then subtract 30    
+0000105E  6C00 0006                 59      BGE     CHECK_NUM_MAX   * check if it's in range for x > 2F
+00001062  6000 0048                 60      BRA     ERROR_INV_INP   * First condition not met, go to bad input error 
+00001066                            61      
+00001066                            62  CHECK_NUM_MAX     ;; Checks if number is <= 39 (9) in ASCII
+00001066  B67C 0039                 63      CMP     #ASC_NUM_MAX,D3
+0000106A  6F00 0020                 64      BLE     ASC_TO_NUM      * If condition for the range was met, do the math
+0000106E  4EF9 00001074             65      JMP     CHECK_CHAR_MIN  * Second condition was not met, check if a character
+00001074                            66      
+00001074                            67  CHECK_CHAR_MIN    ;; Checks if number is >= 41 (A) in ASCII
+00001074  B67C 0041                 68      CMP     #ASC_CHAR_MIN,D3
+00001078  6C00 0006                 69      BGE     CHECK_CHAR_MAX  
+0000107C  6000 002E                 70      BRA     ERROR_INV_INP   * First condition not met, D3 < 41 = symbols. Go to bad input error
+00001080                            71      
+00001080                            72  CHECK_CHAR_MAX    ;; Checks if number is <= 46 (F) in ASCII
+00001080  B67C 0046                 73      CMP     #ASC_CHAR_MAX,D3
+00001084  6F00 0010                 74      BLE     ASC_TO_CHAR     * Condition was met for A-F     
+00001088  6000 0022                 75      BRA     ERROR_INV_INP   * Greater than 46 = out of 16-bit system
+0000108C                            76      
+0000108C                            77  ASC_TO_NUM        ;; Converts a string digit into a hex value
+0000108C  0403 0030                 78      SUBI.B  #$30,D3
+00001090  4EF9 000010A0             79      JMP     SHIFTS          * After this routine is finished, complete shifts/adds
+00001096                            80      
+00001096                            81  ASC_TO_CHAR       ;; Converts a string character into a hex value
+00001096  0403 0037                 82      SUBI.B  #$37,D3    
+0000109A  4EF9 000010A0             83      JMP     SHIFTS          * Convert a string character into a hex value
+000010A0                            84      
+000010A0                            85  SHIFTS            ;; Shifts D2 left by four bits to make room for the newly converted hexabit
+000010A0  E98A                      86      LSL.L   #4,D2           * Initial value in D2 shifted hexabit over to the left to make room   
+000010A2  D403                      87      ADD.B   D3,D2           * Add modified value from D3 into D2.
+000010A4                            88      
+000010A4  5204                      89      ADD.B   #1,D4           * Increment counter by 1 
+000010A6  B244                      90      CMP     D4,D1           * Check if we have already reached the end of the input. D4 = counter
+000010A8  66AE                      91      BNE     CONVERSION_LOOP * Continue back to the loop if D4 != D1  
+000010AA  4E75                      92      RTS
+000010AC                            93  ;; ~~~~~~~~END OF CONVERSION SUBROUTINE~~~~~~~~
+000010AC                            94      
+000010AC                            95      
+000010AC                            96      
+000010AC                            97  ERROR_INV_INP     ;; Prints the INVALID_INPUT error message to the console
+000010AC  43F9 00001126             98      LEA     INVALID_INPUT,A1
+000010B2  103C 000D                 99      MOVE.B  #13,D0
+000010B6  4E4F                     100      TRAP    #15
+000010B8  6000 0142                101      BRA     END_NOW
+000010BC                           102      
+000010BC                           103  ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message to the console.
+000010BC  43F9 00001143            104      LEA     END_LTE_BEG,A1
+000010C2  103C 000D                105      MOVE.B  #13,D0
+000010C6  4E4F                     106      TRAP    #15
+000010C8  6000 0132                107      BRA     END_NOW
+000010CC                           108    
+000010CC                           109    
+000010CC                           110      
+000010CC                           111  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
+000010CC                           112  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
+000010CC  43F9 000011CB            113      LEA     PRINT_IT_STRING,A1
+000010D2  103C 000D                114      MOVE.B  #13,D0
+000010D6  4E4F                     115      TRAP    #15
+000010D8                           116      
+000010D8                           117  PRINT_IT_LOOP
+000010D8  103C 000F                118      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+000010DC  143C 0010                119      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+000010E0                           120      * PRINT THE CURRENT ADDRESS
+000010E0  220E                     121      MOVE.L  A6,D1
+000010E2  4E4F                     122      TRAP    #15
+000010E4  4281                     123      CLR.L   D1          * clear D1 so that it holds just the data on the next print
+000010E6                           124      
+000010E6  43F9 00001123            125      LEA     COLON_SPACE,A1
+000010EC  103C 000E                126      MOVE.B  #14,D0
+000010F0  4E4F                     127      TRAP    #15
+000010F2                           128      
+000010F2  221E                     129      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
+000010F4  103C 000F                130      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
+000010F8  4E4F                     131      TRAP    #15
+000010FA                           132      
+000010FA                           133      * Print a new line
+000010FA  43F9 0000111A            134      LEA     NEW_LINE,A1
+00001100  103C 000D                135      MOVE.B  #13,D0
+00001104  4E4F                     136      TRAP    #15
+00001106                           137      
+00001106                           138      * Check if end address has been reached
+00001106  BDCD                     139      CMP.L   A5,A6
+00001108  6FCE                     140      BLE     PRINT_IT_LOOP
+0000110A                           141  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+0000110A                           142      
+0000110A                           143      
+0000110A  43F9 0000111D            144      LEA     DONE_MSG,A1
+00001110  103C 000D                145      MOVE.B  #13,D0
+00001114  4E4F                     146      TRAP    #15
+00001116                           147  
+00001116  FFFF FFFF                148      SIMHALT             ; halt simulator
+0000111A                           149  
+0000111A                           150  * Put variables and constants here
+0000111A                           151  
+0000111A                           152  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
+0000111A                           153  *** real hex value (depending on whether it's a digit or a character).
+0000111A  =00000030                154  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
+0000111A  =00000039                155  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
+0000111A  =00000041                156  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
+0000111A  =00000046                157  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
+0000111A                           158  
+0000111A                           159  *** Message strings
+0000111A                           160      * Temporary; used for debugging and testing
+0000111A= 00 0D 0A                 161  NEW_LINE        DC.B    '',0,CR,LF
+0000111D                           162      * Temporary; used for debugging and testing
+0000111D= 44 6F 6E 65 2E 00        163  DONE_MSG        DC.B    'Done.',0
+00001123                           164      * Temporary; used for debugging and testing
+00001123= 3A 20 00                 165  COLON_SPACE     DC.B    ': ',0
+00001126= 49 6E 76 61 6C 69 ...    166  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
+00001143= 49 6E 76 61 6C 69 ...    167  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
+00001186= 45 6E 74 65 72 20 ...    168  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+000011A9= 45 6E 74 65 72 20 ...    169  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
+000011CB= 49 20 61 6D 20 61 ...    170  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+000011F8  =0000000A                171  LF              EQU      $0A
+000011F8  =0000000D                172  CR              EQU      $0D
+000011F8                           173  
+000011F8= 00000001                 174  buffer  DC.L    1
+000011FC                           175  END_NOW
+000011FC                           176      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -182,32 +186,32 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ADDR_PRMPT_END      11B3
-ADDR_PRMPT_STRT     1190
+ADDR_PRMPT_END      11A9
+ADDR_PRMPT_STRT     1186
 ASC_CHAR_MAX        46
 ASC_CHAR_MIN        41
 ASC_NUM_MAX         39
 ASC_NUM_MIN         30
-ASC_TO_CHAR         10A0
-ASC_TO_NUM          1096
-BUFFER              1202
-CHECK_CHAR_MAX      108A
-CHECK_CHAR_MIN      107E
-CHECK_NUM_MAX       1070
-CHECK_NUM_MIN       1064
-COLON_SPACE         112D
-CONVERSION_LOOP     1062
+ASC_TO_CHAR         1096
+ASC_TO_NUM          108C
+BUFFER              11F8
+CHECK_CHAR_MAX      1080
+CHECK_CHAR_MIN      1074
+CHECK_NUM_MAX       1066
+CHECK_NUM_MIN       105A
+COLON_SPACE         1123
+CONVERSION_LOOP     1058
 CR                  D
-DONE_MSG            1127
-END_LTE_BEG         114D
-END_NOW             1206
-ERROR_END_LTE_BEG   10C6
-ERROR_INV_INP       10B6
-INVALID_INPUT       1130
+DONE_MSG            111D
+END_LTE_BEG         1143
+END_NOW             11FC
+ERROR_END_LTE_BEG   10BC
+ERROR_INV_INP       10AC
+INVALID_INPUT       1126
 LF                  A
-NEW_LINE            1124
-PRINT_IT            10D6
-PRINT_IT_LOOP       10E2
-PRINT_IT_STRING     11D5
-SHIFTS              10AA
+NEW_LINE            111A
+PRINT_IT            10CC
+PRINT_IT_LOOP       10D8
+PRINT_IT_STRING     11CB
+SHIFTS              10A0
 START               1000
