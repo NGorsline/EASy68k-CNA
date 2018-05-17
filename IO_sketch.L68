@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/15/2018 12:58:25 PM
+Created On: 5/16/2018 10:02:27 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :  Disassembler I/O 
@@ -44,7 +44,7 @@ Created On: 5/15/2018 12:58:25 PM
 00001046                            40      
 00001046  4EB9 00001058             41      JSR     CONVERSION_LOOP * convert the ending address
 0000104C  2A42                      42      MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
-0000104E  BDCD                      43      CMPA.L   A5,A6           * check if beginning address is >= end address. If so, display error
+0000104E  BDCD                      43      CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
 00001050  6C00 006A                 44      BGE     ERROR_END_LTE_BEG
 00001054  6000 0076                 45      BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
 00001058                            46      
@@ -102,13 +102,13 @@ Created On: 5/15/2018 12:58:25 PM
 000010AC  43F9 00001126             98      LEA     INVALID_INPUT,A1
 000010B2  103C 000D                 99      MOVE.B  #13,D0
 000010B6  4E4F                     100      TRAP    #15
-000010B8  6000 0142                101      BRA     END_NOW
+000010B8  6000 0182                101      BRA     END_NOW
 000010BC                           102      
 000010BC                           103  ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message to the console.
 000010BC  43F9 00001143            104      LEA     END_LTE_BEG,A1
 000010C2  103C 000D                105      MOVE.B  #13,D0
 000010C6  4E4F                     106      TRAP    #15
-000010C8  6000 0132                107      BRA     END_NOW
+000010C8  6000 0172                107      BRA     END_NOW
 000010CC                           108    
 000010CC                           109    
 000010CC                           110      
@@ -176,8 +176,58 @@ Created On: 5/15/2018 12:58:25 PM
 000011F8  =0000000D                172  CR              EQU      $0D
 000011F8                           173  
 000011F8= 00000001                 174  buffer  DC.L    1
-000011FC                           175  END_NOW
-000011FC                           176      END    START        ; last line of source
+000011FC                           175  
+000011FC                           176      INCLUDE 'OP.x68'
+000011FC                           177  
+000011FC                           178  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
+000011FC                           179  
+000011FC                           180  OP_DECODE
+000011FC  3A1E                     181      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+000011FE                           182      
+000011FE                           183      * is it NOP?
+000011FE  BA7C 4E71                184      CMP.W   #CODE_NOP,D5
+00001202  6700 000A                185      BEQ     DO_NOP       * This will take it on back to the I/O module
+00001206                           186      
+00001206                           187      * is it RTS?
+00001206  BA7C 4E75                188      CMP.W   #CODE_RTS,D5
+0000120A  6700 0010                189      BEQ     DO_RTS       * This will take it on back to the I/O module
+0000120E                           190      
+0000120E                           191      
+0000120E                           192  ;; ~~~~~~~~CHUNKS FOR WRITING DECODED OPS TO MEMORY~~~~~~~~
+0000120E                           193  
+0000120E                           194  ;; Typical structure for these chunks:
+0000120E                           195  
+0000120E                           196  DO_NOP
+0000120E  47F9 00001234            197      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+00001214  4EB9 0000122A            198      JSR     WRITE       * Jump to WRITE subroutine
+0000121A  4E75                     199      RTS                 * Return to I/O module 
+0000121C                           200      
+0000121C                           201  
+0000121C                           202  DO_RTS
+0000121C  47F9 00001238            203      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+00001222  4EB9 0000122A            204      JSR     WRITE       * Jump to WRITE subroutine
+00001228  4E75                     205      RTS                 * Return to the I/O module
+0000122A                           206     
+0000122A                           207  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+0000122A  12DB                     208      MOVE.B  (A3)+,(A1)+     * Write one byte and increment
+0000122C  0C13 0000                209      CMP.B   #0,(A3)         * Are we at the null terminator?
+00001230  66F8                     210      BNE     WRITE           * If not, keep going
+00001232  4E75                     211      RTS                     * Executes once null terminator was reached
+00001234                           212      
+00001234                           213  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+00001234                           214  
+00001234  =00004E71                215  CODE_NOP    EQU     $4E71
+00001234  =00004E75                216  CODE_RTS    EQU     $4E75
+00001234                           217  
+00001234= 4E 4F 50 00              218  S_NOP   DC.B    'NOP',0
+00001238= 52 54 53 00              219  S_RTS   DC.B    'RTS',0
+0000123C                           220  
+0000123C                           221  
+0000123C                           222  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+0000123C                           223  -------------------- end include --------------------
+0000123C                           224  
+0000123C                           225  END_NOW
+0000123C                           226      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -199,19 +249,27 @@ CHECK_CHAR_MAX      1080
 CHECK_CHAR_MIN      1074
 CHECK_NUM_MAX       1066
 CHECK_NUM_MIN       105A
+CODE_NOP            4E71
+CODE_RTS            4E75
 COLON_SPACE         1123
 CONVERSION_LOOP     1058
 CR                  D
 DONE_MSG            111D
+DO_NOP              120E
+DO_RTS              121C
 END_LTE_BEG         1143
-END_NOW             11FC
+END_NOW             123C
 ERROR_END_LTE_BEG   10BC
 ERROR_INV_INP       10AC
 INVALID_INPUT       1126
 LF                  A
 NEW_LINE            111A
+OP_DECODE           11FC
 PRINT_IT            10CC
 PRINT_IT_LOOP       10D8
 PRINT_IT_STRING     11CB
 SHIFTS              10A0
 START               1000
+S_NOP               1234
+S_RTS               1238
+WRITE               122A

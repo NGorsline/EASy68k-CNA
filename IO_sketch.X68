@@ -12,7 +12,7 @@ START:                  ; first instruction of program
     MOVE.B  #14,D0
     TRAP    #15
 
-    LEA     buffer,A1       * Load buffers effective address into A1
+    LEA     buffer,A1       * Load buffer's effective address into A1
     MOVE.B  #2,D0           * get the starting address from the user as a string
     TRAP    #15         
     
@@ -139,6 +139,8 @@ PRINT_IT_LOOP
     CMP.L   A5,A6
     BLE     PRINT_IT_LOOP
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+
+
     
     
     LEA     DONE_MSG,A1
@@ -172,8 +174,13 @@ LF              EQU      $0A
 CR              EQU      $0D
 
 buffer  DC.L    1
+
+    INCLUDE 'OP.x68'
+
 END_NOW
     END    START        ; last line of source
+
+
 
 
 
