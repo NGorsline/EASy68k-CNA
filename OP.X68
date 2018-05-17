@@ -12,6 +12,7 @@
 
 OP_DECODE
     MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+    * NOTE: A6 now points at either the next opcode or imm. data for EA part
     
     * is it NOP?
     CMP.W   #CODE_NOP,D5
@@ -43,9 +44,12 @@ DO_RTS
 *** A3 -> String to write (load before calling)
 *** A1 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+    MOVE.L  A1,A1_PREV      * Save the position of A1 before writing (for I/0)
+WRITE_LOOP
     MOVE.B  (A3)+,(A1)+     * Write one byte and increment
     CMP.B   #0,(A3)         * Are we at the null terminator?
-    BNE     WRITE           * If not, keep going
+    BNE     WRITE_LOOP         * If not, keep going
+    MOVE.B  (A3)+,(A1)+     * Write the null terminator before exiting
     RTS                     * Executes once null terminator was reached
     
 ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
@@ -54,10 +58,12 @@ WRITE   * Writes string pointed to by A3 to memory pointed to by A1
 CODE_NOP    EQU     $4E71
 CODE_RTS    EQU     $4E75
 
+*** Variable used to store the previous value of A1 before writing
+A1_PREV     SET     2323
+
 *** Strings for opcodes (write these to memory)
 S_NOP   DC.B    'NOP',0
 S_RTS   DC.B    'RTS',0
-
 
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 *~Font name~Courier New~

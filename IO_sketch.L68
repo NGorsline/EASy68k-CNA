@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/16/2018 10:02:27 PM
+Created On: 5/17/2018 12:14:59 AM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :  Disassembler I/O 
@@ -12,11 +12,11 @@ Created On: 5/16/2018 10:02:27 PM
 00001000                             8  START:                  ; first instruction of program
 00001000                             9  
 00001000                            10  * Put program code here
-00001000  43F9 00001186             11      LEA     ADDR_PRMPT_STRT,A1
+00001000  43F9 000011C2             11      LEA     ADDR_PRMPT_STRT,A1
 00001006  103C 000E                 12      MOVE.B  #14,D0
 0000100A  4E4F                      13      TRAP    #15
 0000100C                            14  
-0000100C  43F9 000011F8             15      LEA     buffer,A1       * Load buffers effective address into A1
+0000100C  43F9 00001234             15      LEA     buffer,A1       * Load buffer's effective address into A1
 00001012  103C 0002                 16      MOVE.B  #2,D0           * get the starting address from the user as a string
 00001016  4E4F                      17      TRAP    #15         
 00001018                            18      
@@ -31,7 +31,7 @@ Created On: 5/16/2018 10:02:27 PM
 00001028  4282                      27      CLR.L   D2              * clear register D2 in preparation to hold the converted end address
 0000102A  4284                      28      CLR.L   D4              * clear register D4 to start the counter at 0 again
 0000102C                            29      
-0000102C  43F9 000011A9             30      LEA     ADDR_PRMPT_END,A1
+0000102C  43F9 000011E5             30      LEA     ADDR_PRMPT_END,A1
 00001032  103C 000E                 31      MOVE.B  #14,D0
 00001036  4E4F                      32      TRAP    #15
 00001038                            33      
@@ -46,7 +46,7 @@ Created On: 5/16/2018 10:02:27 PM
 0000104C  2A42                      42      MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
 0000104E  BDCD                      43      CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
 00001050  6C00 006A                 44      BGE     ERROR_END_LTE_BEG
-00001054  6000 0076                 45      BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
+00001054  6000 0076                 45      BRA     MAIN_LOOP       * skip past the CONVERSION_LOOP subroutine to continue with the program
 00001058                            46      
 00001058                            47  
 00001058                            48  
@@ -98,136 +98,187 @@ Created On: 5/16/2018 10:02:27 PM
 000010AC                            94      
 000010AC                            95      
 000010AC                            96      
-000010AC                            97  ERROR_INV_INP     ;; Prints the INVALID_INPUT error message to the console
-000010AC  43F9 00001126             98      LEA     INVALID_INPUT,A1
+000010AC                            97  ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
+000010AC  43F9 00001162             98      LEA     INVALID_INPUT,A1
 000010B2  103C 000D                 99      MOVE.B  #13,D0
 000010B6  4E4F                     100      TRAP    #15
-000010B8  6000 0182                101      BRA     END_NOW
+000010B8  6000 0314                101      BRA     END_NOW
 000010BC                           102      
 000010BC                           103  ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message to the console.
-000010BC  43F9 00001143            104      LEA     END_LTE_BEG,A1
+000010BC  43F9 0000117F            104      LEA     END_LTE_BEG,A1
 000010C2  103C 000D                105      MOVE.B  #13,D0
 000010C6  4E4F                     106      TRAP    #15
-000010C8  6000 0172                107      BRA     END_NOW
+000010C8  6000 0304                107      BRA     END_NOW
 000010CC                           108    
 000010CC                           109    
-000010CC                           110      
-000010CC                           111  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
-000010CC                           112  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
-000010CC  43F9 000011CB            113      LEA     PRINT_IT_STRING,A1
-000010D2  103C 000D                114      MOVE.B  #13,D0
-000010D6  4E4F                     115      TRAP    #15
-000010D8                           116      
-000010D8                           117  PRINT_IT_LOOP
-000010D8  103C 000F                118      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-000010DC  143C 0010                119      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-000010E0                           120      * PRINT THE CURRENT ADDRESS
-000010E0  220E                     121      MOVE.L  A6,D1
-000010E2  4E4F                     122      TRAP    #15
-000010E4  4281                     123      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-000010E6                           124      
-000010E6  43F9 00001123            125      LEA     COLON_SPACE,A1
-000010EC  103C 000E                126      MOVE.B  #14,D0
-000010F0  4E4F                     127      TRAP    #15
-000010F2                           128      
-000010F2  221E                     129      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
-000010F4  103C 000F                130      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
-000010F8  4E4F                     131      TRAP    #15
-000010FA                           132      
-000010FA                           133      * Print a new line
-000010FA  43F9 0000111A            134      LEA     NEW_LINE,A1
-00001100  103C 000D                135      MOVE.B  #13,D0
-00001104  4E4F                     136      TRAP    #15
-00001106                           137      
-00001106                           138      * Check if end address has been reached
-00001106  BDCD                     139      CMP.L   A5,A6
-00001108  6FCE                     140      BLE     PRINT_IT_LOOP
-0000110A                           141  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
-0000110A                           142      
-0000110A                           143      
-0000110A  43F9 0000111D            144      LEA     DONE_MSG,A1
-00001110  103C 000D                145      MOVE.B  #13,D0
-00001114  4E4F                     146      TRAP    #15
-00001116                           147  
-00001116  FFFF FFFF                148      SIMHALT             ; halt simulator
-0000111A                           149  
-0000111A                           150  * Put variables and constants here
-0000111A                           151  
-0000111A                           152  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
-0000111A                           153  *** real hex value (depending on whether it's a digit or a character).
-0000111A  =00000030                154  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
-0000111A  =00000039                155  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
-0000111A  =00000041                156  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
-0000111A  =00000046                157  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
-0000111A                           158  
-0000111A                           159  *** Message strings
-0000111A                           160      * Temporary; used for debugging and testing
-0000111A= 00 0D 0A                 161  NEW_LINE        DC.B    '',0,CR,LF
-0000111D                           162      * Temporary; used for debugging and testing
-0000111D= 44 6F 6E 65 2E 00        163  DONE_MSG        DC.B    'Done.',0
-00001123                           164      * Temporary; used for debugging and testing
-00001123= 3A 20 00                 165  COLON_SPACE     DC.B    ': ',0
-00001126= 49 6E 76 61 6C 69 ...    166  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
-00001143= 49 6E 76 61 6C 69 ...    167  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-00001186= 45 6E 74 65 72 20 ...    168  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
-000011A9= 45 6E 74 65 72 20 ...    169  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
-000011CB= 49 20 61 6D 20 61 ...    170  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
-000011F8  =0000000A                171  LF              EQU      $0A
-000011F8  =0000000D                172  CR              EQU      $0D
-000011F8                           173  
-000011F8= 00000001                 174  buffer  DC.L    1
-000011FC                           175  
-000011FC                           176      INCLUDE 'OP.x68'
-000011FC                           177  
-000011FC                           178  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
-000011FC                           179  
-000011FC                           180  OP_DECODE
-000011FC  3A1E                     181      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
-000011FE                           182      
-000011FE                           183      * is it NOP?
-000011FE  BA7C 4E71                184      CMP.W   #CODE_NOP,D5
-00001202  6700 000A                185      BEQ     DO_NOP       * This will take it on back to the I/O module
-00001206                           186      
-00001206                           187      * is it RTS?
-00001206  BA7C 4E75                188      CMP.W   #CODE_RTS,D5
-0000120A  6700 0010                189      BEQ     DO_RTS       * This will take it on back to the I/O module
-0000120E                           190      
-0000120E                           191      
-0000120E                           192  ;; ~~~~~~~~CHUNKS FOR WRITING DECODED OPS TO MEMORY~~~~~~~~
-0000120E                           193  
-0000120E                           194  ;; Typical structure for these chunks:
-0000120E                           195  
-0000120E                           196  DO_NOP
-0000120E  47F9 00001234            197      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-00001214  4EB9 0000122A            198      JSR     WRITE       * Jump to WRITE subroutine
-0000121A  4E75                     199      RTS                 * Return to I/O module 
-0000121C                           200      
-0000121C                           201  
-0000121C                           202  DO_RTS
-0000121C  47F9 00001238            203      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-00001222  4EB9 0000122A            204      JSR     WRITE       * Jump to WRITE subroutine
-00001228  4E75                     205      RTS                 * Return to the I/O module
-0000122A                           206     
-0000122A                           207  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-0000122A  12DB                     208      MOVE.B  (A3)+,(A1)+     * Write one byte and increment
-0000122C  0C13 0000                209      CMP.B   #0,(A3)         * Are we at the null terminator?
-00001230  66F8                     210      BNE     WRITE           * If not, keep going
-00001232  4E75                     211      RTS                     * Executes once null terminator was reached
-00001234                           212      
-00001234                           213  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
-00001234                           214  
-00001234  =00004E71                215  CODE_NOP    EQU     $4E71
-00001234  =00004E75                216  CODE_RTS    EQU     $4E75
-00001234                           217  
-00001234= 4E 4F 50 00              218  S_NOP   DC.B    'NOP',0
-00001238= 52 54 53 00              219  S_RTS   DC.B    'RTS',0
-0000123C                           220  
-0000123C                           221  
-0000123C                           222  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-0000123C                           223  -------------------- end include --------------------
-0000123C                           224  
-0000123C                           225  END_NOW
-0000123C                           226      END    START        ; last line of source
+000010CC                           110  MAIN_LOOP
+000010CC                           111      *BRA     END_NOW
+000010CC  BDCD                     112      CMPA.L  A5,A6
+000010CE  6C00 02FE                113      BGE     END_NOW
+000010D2  6000 02B0                114      BRA     OP_DECODE
+000010D6  207C 00000913            115      MOVEA.L #A1_PREV,A0
+000010DC                           116      
+000010DC                           117  PRINT_LOOP ;; Print the most recently decoded line
+000010DC                           118      * If finished printing, return to decode loop
+000010DC  B3C8                     119      CMP.L   A0,A1
+000010DE  6CEC                     120      BGE     MAIN_LOOP
+000010E0  1218                     121      MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
+000010E2                           122      
+000010E2  103C 0006                123      MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
+000010E6  4E4F                     124      TRAP    #15
+000010E8  60F2                     125      BRA     PRINT_LOOP
+000010EA                           126      
+000010EA                           127      
+000010EA                           128      
+000010EA                           129    
+000010EA                           130  ;; print nops
+000010EA                           131  PRINT_NOPS_TEST
+000010EA  103C 000F                132      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+000010EE  143C 0010                133      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+000010F2                           134      * PRINT THE CURRENT ADDRESS
+000010F2  220E                     135      MOVE.L  A6,D1
+000010F4  4E4F                     136      TRAP    #15
+000010F6  4281                     137      CLR.L   D1          * clear D1 so that it holds just the data on the next print
+000010F8                           138      
+000010F8  43F9 0000115F            139      LEA     COLON_SPACE,A1
+000010FE  103C 000E                140      MOVE.B  #14,D0
+00001102  4E4F                     141      TRAP    #15
+00001104                           142      
+00001104  103C 0001                143      MOVE.B  #1,D0   * Print string, no CRLF
+00001108                           144      
+00001108                           145      
+00001108                           146      
+00001108                           147      
+00001108                           148  
+00001108                           149  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
+00001108                           150  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
+00001108  43F9 00001207            151      LEA     PRINT_IT_STRING,A1
+0000110E  103C 000D                152      MOVE.B  #13,D0
+00001112  4E4F                     153      TRAP    #15
+00001114                           154      
+00001114                           155  PRINT_IT_LOOP
+00001114  103C 000F                156      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+00001118  143C 0010                157      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+0000111C                           158      * PRINT THE CURRENT ADDRESS
+0000111C  220E                     159      MOVE.L  A6,D1
+0000111E  4E4F                     160      TRAP    #15
+00001120  4281                     161      CLR.L   D1          * clear D1 so that it holds just the data on the next print
+00001122                           162      
+00001122  43F9 0000115F            163      LEA     COLON_SPACE,A1
+00001128  103C 000E                164      MOVE.B  #14,D0
+0000112C  4E4F                     165      TRAP    #15
+0000112E                           166      
+0000112E  221E                     167      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
+00001130  103C 000F                168      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
+00001134  4E4F                     169      TRAP    #15
+00001136                           170      
+00001136                           171      * Print a new line
+00001136  43F9 00001156            172      LEA     NEW_LINE,A1
+0000113C  103C 000D                173      MOVE.B  #13,D0
+00001140  4E4F                     174      TRAP    #15
+00001142                           175      
+00001142                           176      * Check if end address has been reached
+00001142  BDCD                     177      CMP.L   A5,A6
+00001144  6FCE                     178      BLE     PRINT_IT_LOOP
+00001146                           179  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+00001146                           180  
+00001146                           181  
+00001146                           182      
+00001146                           183      
+00001146  43F9 00001159            184      LEA     DONE_MSG,A1
+0000114C  103C 000D                185      MOVE.B  #13,D0
+00001150  4E4F                     186      TRAP    #15
+00001152                           187  
+00001152  FFFF FFFF                188      SIMHALT             ; halt simulator
+00001156                           189  
+00001156                           190  * Put variables and constants here
+00001156                           191  
+00001156                           192  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
+00001156                           193  *** real hex value (depending on whether it's a digit or a character).
+00001156  =00000030                194  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
+00001156  =00000039                195  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
+00001156  =00000041                196  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
+00001156  =00000046                197  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
+00001156                           198  
+00001156                           199  *** Message strings
+00001156                           200      * Temporary; used for debugging and testing
+00001156= 00 0D 0A                 201  NEW_LINE        DC.B    '',0,CR,LF
+00001159                           202      * Temporary; used for debugging and testing
+00001159= 44 6F 6E 65 2E 00        203  DONE_MSG        DC.B    'Done.',0
+0000115F                           204      * Temporary; used for debugging and testing
+0000115F= 3A 20 00                 205  COLON_SPACE     DC.B    ': ',0
+00001162= 49 6E 76 61 6C 69 ...    206  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
+0000117F= 49 6E 76 61 6C 69 ...    207  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
+000011C2= 45 6E 74 65 72 20 ...    208  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+000011E5= 45 6E 74 65 72 20 ...    209  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
+00001207= 49 20 61 6D 20 61 ...    210  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+00001234  =0000000A                211  LF              EQU      $0A
+00001234  =0000000D                212  CR              EQU      $0D
+00001234                           213  
+00001234= 00000000 00000000 ...    214  buffer  DCB.L    84,0
+00001384                           215  
+00001384                           216      INCLUDE 'OP.x68'
+00001384                           217  
+00001384                           218  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
+00001384                           219  
+00001384                           220  OP_DECODE
+00001384  3A1E                     221      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+00001386                           222      * NOTE: A6 now points at either the next opcode or imm. data for EA part
+00001386                           223      
+00001386                           224      * is it NOP?
+00001386  BA7C 4E71                225      CMP.W   #CODE_NOP,D5
+0000138A  6700 000C                226      BEQ     DO_NOP       * This will take it on back to the I/O module
+0000138E                           227      
+0000138E                           228      * is it RTS?
+0000138E  BA7C 4E75                229      CMP.W   #CODE_RTS,D5
+00001392  6700 0012                230      BEQ     DO_RTS       * This will take it on back to the I/O module
+00001396                           231      
+00001396  4E75                     232      RTS * Return to I/O module (temporary; will go to EA module eventually)
+00001398                           233      
+00001398                           234      
+00001398                           235  ;; ~~~~~~~~CHUNKS FOR WRITING DECODED OPS TO MEMORY~~~~~~~~
+00001398                           236  
+00001398                           237  ;; Typical structure for these chunks:
+00001398                           238  
+00001398                           239  DO_NOP
+00001398  47F9 000013C6            240      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+0000139E  4EB9 000013B4            241      JSR     WRITE       * Jump to WRITE subroutine
+000013A4  4E75                     242      RTS                 * Return to I/O module 
+000013A6                           243      
+000013A6                           244  
+000013A6                           245  DO_RTS
+000013A6  47F9 000013CA            246      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+000013AC  4EB9 000013B4            247      JSR     WRITE       * Jump to WRITE subroutine
+000013B2  4E75                     248      RTS                 * Return to the I/O module
+000013B4                           249     
+000013B4                           250  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+000013B4  23C9 00000913            251      MOVE.L  A1,A1_PREV      * Save the position of A1 before writing (for I/0)
+000013BA                           252  WRITE_LOOP
+000013BA  12DB                     253      MOVE.B  (A3)+,(A1)+     * Write one byte and increment
+000013BC  0C13 0000                254      CMP.B   #0,(A3)         * Are we at the null terminator?
+000013C0  66F8                     255      BNE     WRITE_LOOP         * If not, keep going
+000013C2  12DB                     256      MOVE.B  (A3)+,(A1)+     * Write the null terminator before exiting
+000013C4  4E75                     257      RTS                     * Executes once null terminator was reached
+000013C6                           258      
+000013C6                           259  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+000013C6                           260  
+000013C6  =00004E71                261  CODE_NOP    EQU     $4E71
+000013C6  =00004E75                262  CODE_RTS    EQU     $4E75
+000013C6                           263  
+000013C6  =00000913                264  A1_PREV     SET     2323
+000013C6                           265  
+000013C6= 4E 4F 50 00              266  S_NOP   DC.B    'NOP',0
+000013CA= 52 54 53 00              267  S_RTS   DC.B    'RTS',0
+000013CE                           268  
+000013CE                           269  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+000013CE                           270  -------------------- end include --------------------
+000013CE                           271  
+000013CE                           272  END_NOW
+000013CE  43F8 1159                273      LEA     DONE_MSG,A1
+000013D2  103C 0001                274      MOVE.B  #1,D0
+000013D6  4E4F                     275      TRAP    #15
+000013D8  43F8 1234                276      LEA     buffer,A1
+000013DC                           277      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -236,40 +287,45 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ADDR_PRMPT_END      11A9
-ADDR_PRMPT_STRT     1186
+A1_PREV             913
+ADDR_PRMPT_END      11E5
+ADDR_PRMPT_STRT     11C2
 ASC_CHAR_MAX        46
 ASC_CHAR_MIN        41
 ASC_NUM_MAX         39
 ASC_NUM_MIN         30
 ASC_TO_CHAR         1096
 ASC_TO_NUM          108C
-BUFFER              11F8
+BUFFER              1234
 CHECK_CHAR_MAX      1080
 CHECK_CHAR_MIN      1074
 CHECK_NUM_MAX       1066
 CHECK_NUM_MIN       105A
 CODE_NOP            4E71
 CODE_RTS            4E75
-COLON_SPACE         1123
+COLON_SPACE         115F
 CONVERSION_LOOP     1058
 CR                  D
-DONE_MSG            111D
-DO_NOP              120E
-DO_RTS              121C
-END_LTE_BEG         1143
-END_NOW             123C
+DONE_MSG            1159
+DO_NOP              1398
+DO_RTS              13A6
+END_LTE_BEG         117F
+END_NOW             13CE
 ERROR_END_LTE_BEG   10BC
 ERROR_INV_INP       10AC
-INVALID_INPUT       1126
+INVALID_INPUT       1162
 LF                  A
-NEW_LINE            111A
-OP_DECODE           11FC
-PRINT_IT            10CC
-PRINT_IT_LOOP       10D8
-PRINT_IT_STRING     11CB
+MAIN_LOOP           10CC
+NEW_LINE            1156
+OP_DECODE           1384
+PRINT_IT            1108
+PRINT_IT_LOOP       1114
+PRINT_IT_STRING     1207
+PRINT_LOOP          10DC
+PRINT_NOPS_TEST     10EA
 SHIFTS              10A0
 START               1000
-S_NOP               1234
-S_RTS               1238
-WRITE               122A
+S_NOP               13C6
+S_RTS               13CA
+WRITE               13B4
+WRITE_LOOP          13BA

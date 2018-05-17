@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/16/2018 10:02:06 PM
+Created On: 5/16/2018 11:39:43 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : Opcode module
@@ -16,55 +16,61 @@ Created On: 5/16/2018 10:02:06 PM
 00000000                            12  
 00000000                            13  OP_DECODE
 00000000  3A1E                      14      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
-00000002                            15      
-00000002                            16      * is it NOP?
-00000002  BA7C 4E71                 17      CMP.W   #CODE_NOP,D5
-00000006  6700 000A                 18      BEQ     DO_NOP       * This will take it on back to the I/O module
-0000000A                            19      
-0000000A                            20      * is it RTS?
-0000000A  BA7C 4E75                 21      CMP.W   #CODE_RTS,D5
-0000000E  6700 0010                 22      BEQ     DO_RTS       * This will take it on back to the I/O module
-00000012                            23      
+00000002                            15      * NOTE: A6 now points at either the next opcode or imm. data for EA part
+00000002                            16      
+00000002                            17      * is it NOP?
+00000002  BA7C 4E71                 18      CMP.W   #CODE_NOP,D5
+00000006  6700 000C                 19      BEQ     DO_NOP       * This will take it on back to the I/O module
+0000000A                            20      
+0000000A                            21      * is it RTS?
+0000000A  BA7C 4E75                 22      CMP.W   #CODE_RTS,D5
+0000000E  6700 0012                 23      BEQ     DO_RTS       * This will take it on back to the I/O module
 00000012                            24      
-00000012                            25  ;; ~~~~~~~~CHUNKS FOR WRITING DECODED OPS TO MEMORY~~~~~~~~
-00000012                            26  
-00000012                            27  ;; Typical structure for these chunks:
-00000012                            28  * 
-00000012                            29  
-00000012                            30  DO_NOP
-00000012  47F9 00000038             31      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-00000018  4EB9 0000002E             32      JSR     WRITE       * Jump to WRITE subroutine
-0000001E  4E75                      33      RTS                 * Return to I/O module 
-00000020                            34      
-00000020                            35  
-00000020                            36  DO_RTS
-00000020  47F9 0000003C             37      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-00000026  4EB9 0000002E             38      JSR     WRITE       * Jump to WRITE subroutine
-0000002C  4E75                      39      RTS                 * Return to the I/O module
-0000002E                            40     
-0000002E                            41  *** A3 -> String to write (load before calling)
-0000002E                            42  *** A1 -> Location in memory to write to 
-0000002E                            43  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-0000002E  12DB                      44      MOVE.B  (A3)+,(A1)+     * Write one byte and increment
-00000030  0C13 0000                 45      CMP.B   #0,(A3)         * Are we at the null terminator?
-00000034  66F8                      46      BNE     WRITE           * If not, keep going
-00000036  4E75                      47      RTS                     * Executes once null terminator was reached
-00000038                            48      
-00000038                            49  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
-00000038                            50  
-00000038                            51  *** ML constants for op-codes without EA modes (NOP, RTS)
-00000038  =00004E71                 52  CODE_NOP    EQU     $4E71
-00000038  =00004E75                 53  CODE_RTS    EQU     $4E75
-00000038                            54  
-00000038                            55  *** Strings for opcodes (write these to memory)
-00000038= 4E 4F 50 00               56  S_NOP   DC.B    'NOP',0
-0000003C= 52 54 53 00               57  S_RTS   DC.B    'RTS',0
-00000040                            58  
-00000040                            59  
-00000040                            60  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-Line 61 WARNING: END directive missing, starting address not set
+00000012  4E75                      25      RTS * Return to I/O module (temporary; will go to EA module eventually)
+00000014                            26      
+00000014                            27      
+00000014                            28  ;; ~~~~~~~~CHUNKS FOR WRITING DECODED OPS TO MEMORY~~~~~~~~
+00000014                            29  
+00000014                            30  ;; Typical structure for these chunks:
+00000014                            31  * 
+00000014                            32  
+00000014                            33  DO_NOP
+00000014  47F9 00000042             34      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+0000001A  4EB9 00000030             35      JSR     WRITE       * Jump to WRITE subroutine
+00000020  4E75                      36      RTS                 * Return to I/O module 
+00000022                            37      
+00000022                            38  
+00000022                            39  DO_RTS
+00000022  47F9 00000046             40      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+00000028  4EB9 00000030             41      JSR     WRITE       * Jump to WRITE subroutine
+0000002E  4E75                      42      RTS                 * Return to the I/O module
+00000030                            43     
+00000030                            44  *** A3 -> String to write (load before calling)
+00000030                            45  *** A1 -> Location in memory to write to 
+00000030                            46  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+Line 47 ERROR: Undefined symbol
+00000030  23C9 005455DC             47      MOVE.L  A1,A1_PREV      * Save the position of A1 before writing (for I/0)
+00000036                            48  WRITE_LOOP
+00000036  12DB                      49      MOVE.B  (A3)+,(A1)+     * Write one byte and increment
+00000038  0C13 0000                 50      CMP.B   #0,(A3)         * Are we at the null terminator?
+0000003C  66F8                      51      BNE     WRITE_LOOP         * If not, keep going
+0000003E  12DB                      52      MOVE.B  (A3)+,(A1)+     * Write the null terminator before exiting
+00000040  4E75                      53      RTS                     * Executes once null terminator was reached
+00000042                            54      
+00000042                            55  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+00000042                            56  
+00000042                            57  *** ML constants for op-codes without EA modes (NOP, RTS)
+00000042  =00004E71                 58  CODE_NOP    EQU     $4E71
+00000042  =00004E75                 59  CODE_RTS    EQU     $4E75
+00000042                            60  
+00000042                            61  *** Strings for opcodes (write these to memory)
+00000042= 4E 4F 50 00               62  S_NOP   DC.B    'NOP',0
+00000046= 52 54 53 00               63  S_RTS   DC.B    'RTS',0
+0000004A                            64  
+0000004A                            65  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+Line 66 WARNING: END directive missing, starting address not set
 
-No errors detected
+1 error detected
 1 warning generated
 
 
@@ -73,9 +79,10 @@ Symbol-name         Value
 -------------------------
 CODE_NOP            4E71
 CODE_RTS            4E75
-DO_NOP              12
-DO_RTS              20
+DO_NOP              14
+DO_RTS              22
 OP_DECODE           0
-S_NOP               38
-S_RTS               3C
-WRITE               2E
+S_NOP               42
+S_RTS               46
+WRITE               30
+WRITE_LOOP          36

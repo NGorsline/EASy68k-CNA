@@ -42,7 +42,7 @@ START:                  ; first instruction of program
     MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
     CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
     BGE     ERROR_END_LTE_BEG
-    BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
+    BRA     MAIN_LOOP       * skip past the CONVERSION_LOOP subroutine to continue with the program
     
 
 
@@ -94,7 +94,7 @@ SHIFTS            ;; Shifts D2 left by four bits to make room for the newly conv
     
     
     
-ERROR_INV_INP     ;; Prints the INVALID_INPUT error message to the console
+ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
     LEA     INVALID_INPUT,A1
     MOVE.B  #13,D0
     TRAP    #15
@@ -107,7 +107,45 @@ ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message 
     BRA     END_NOW
   
   
+MAIN_LOOP
+    *BRA     END_NOW
+    CMPA.L  A5,A6
+    BGE     END_NOW
+    BRA     OP_DECODE
+    MOVEA.L #A1_PREV,A0
     
+PRINT_LOOP ;; Print the most recently decoded line
+    * If finished printing, return to decode loop
+    CMP.L   A0,A1
+    BGE     MAIN_LOOP
+    MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
+    
+    MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
+    TRAP    #15
+    BRA     PRINT_LOOP
+    
+    
+    
+  
+;; print nops
+PRINT_NOPS_TEST
+    MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+    MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+    * PRINT THE CURRENT ADDRESS
+    MOVE.L  A6,D1
+    TRAP    #15
+    CLR.L   D1          * clear D1 so that it holds just the data on the next print
+    
+    LEA     COLON_SPACE,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  #1,D0   * Print string, no CRLF
+    
+    
+    
+    
+
 ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
 PRINT_IT          ;; Placeholder for now; just prints all data between start and end
     LEA     PRINT_IT_STRING,A1
@@ -173,11 +211,15 @@ PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 LF              EQU      $0A
 CR              EQU      $0D
 
-buffer  DC.L    1
+buffer  DCB.L    84,0
 
     INCLUDE 'OP.x68'
 
 END_NOW
+    LEA     DONE_MSG,A1
+    MOVE.B  #1,D0
+    TRAP    #15
+    LEA     buffer,A1
     END    START        ; last line of source
 
 
