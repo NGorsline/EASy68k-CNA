@@ -8,12 +8,15 @@
 START:                  ; first instruction of program
 
 * Put program code here
+    MOVEA.L #DISM_CODE,A4
+    
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
     TRAP    #15
 
     LEA     buffer,A1       * Load buffer's effective address into A1
     MOVE.B  #2,D0           * get the starting address from the user as a string
+    
     TRAP    #15         
     
 *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
@@ -110,13 +113,13 @@ ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message 
 MAIN_LOOP
     *BRA     END_NOW
     CMPA.L  A5,A6
-    BGE     END_NOW
+    BGE     END_NOW * End program
     BRA     OP_DECODE
-    MOVEA.L #A1_PREV,A0
+    MOVEA.L #A4_PREV,A0 * Move where A4 was before OP_DECODE into A0 for iteration
     
 PRINT_LOOP ;; Print the most recently decoded line
     * If finished printing, return to decode loop
-    CMP.L   A0,A1
+    CMP.L   A0,A4       * Did we print the whole decoded line yet?
     BGE     MAIN_LOOP
     MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
     
@@ -211,7 +214,9 @@ PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 LF              EQU      $0A
 CR              EQU      $0D
 
-buffer  DCB.L    84,0
+buffer  DC.L    1
+
+DISM_CODE     EQU     $8000 * Where to write disassembled code
 
     INCLUDE 'OP.x68'
 
@@ -221,6 +226,7 @@ END_NOW
     TRAP    #15
     LEA     buffer,A1
     END    START        ; last line of source
+
 
 
 
