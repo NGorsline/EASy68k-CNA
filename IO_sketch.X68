@@ -8,12 +8,15 @@
 START:                  ; first instruction of program
 
 * Put program code here
+    MOVEA.L #DISM_CODE,A4
+    
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
     TRAP    #15
 
-    LEA     buffer,A1       * Load buffers effective address into A1
+    LEA     buffer,A1       * Load buffer's effective address into A1
     MOVE.B  #2,D0           * get the starting address from the user as a string
+    
     TRAP    #15         
     
 *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
@@ -42,7 +45,7 @@ START:                  ; first instruction of program
     MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
     CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
     BGE     ERROR_END_LTE_BEG
-    BRA     PRINT_IT        * skip past the CONVERSION_LOOP subroutine to continue with the program
+    BRA     MAIN_LOOP       * skip past the CONVERSION_LOOP subroutine to continue with the program
     
 
 
@@ -94,7 +97,7 @@ SHIFTS            ;; Shifts D2 left by four bits to make room for the newly conv
     
     
     
-ERROR_INV_INP     ;; Prints the INVALID_INPUT error message to the console
+ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
     LEA     INVALID_INPUT,A1
     MOVE.B  #13,D0
     TRAP    #15
@@ -107,7 +110,45 @@ ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message 
     BRA     END_NOW
   
   
+MAIN_LOOP
+    *BRA     END_NOW
+    CMPA.L  A5,A6
+    BGE     END_NOW * End program
+    BRA     OP_DECODE
+    MOVEA.L #A4_PREV,A0 * Move where A4 was before OP_DECODE into A0 for iteration
     
+PRINT_LOOP ;; Print the most recently decoded line
+    * If finished printing, return to decode loop
+    CMP.L   A0,A4       * Did we print the whole decoded line yet?
+    BGE     MAIN_LOOP
+    MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
+    
+    MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
+    TRAP    #15
+    BRA     PRINT_LOOP
+    
+    
+    
+  
+;; print nops
+PRINT_NOPS_TEST
+    MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+    MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+    * PRINT THE CURRENT ADDRESS
+    MOVE.L  A6,D1
+    TRAP    #15
+    CLR.L   D1          * clear D1 so that it holds just the data on the next print
+    
+    LEA     COLON_SPACE,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+    MOVE.B  #1,D0   * Print string, no CRLF
+    
+    
+    
+    
+
 ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
 PRINT_IT          ;; Placeholder for now; just prints all data between start and end
     LEA     PRINT_IT_STRING,A1
@@ -139,6 +180,8 @@ PRINT_IT_LOOP
     CMP.L   A5,A6
     BLE     PRINT_IT_LOOP
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+
+
     
     
     LEA     DONE_MSG,A1
@@ -172,8 +215,20 @@ LF              EQU      $0A
 CR              EQU      $0D
 
 buffer  DC.L    1
+
+DISM_CODE     EQU     $8000 * Where to write disassembled code
+
+    INCLUDE 'OP.x68'
+
 END_NOW
+    LEA     DONE_MSG,A1
+    MOVE.B  #1,D0
+    TRAP    #15
+    LEA     buffer,A1
     END    START        ; last line of source
+
+
+
 
 
 
