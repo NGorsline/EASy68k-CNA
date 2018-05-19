@@ -22,6 +22,7 @@ OP_DECODE
     CMP.W   #CODE_RTS,D5
     BEQ     DO_RTS       * This will take it on back to the I/O module
     
+    BRA     DO_NOP
     RTS * Return to I/O module (temporary; will go to EA module eventually)
     
     
@@ -44,7 +45,7 @@ DO_RTS
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-    MOVE.L  A4,A4_PREV      * Save the position of A1 before writing (for I/0)
+    MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
 WRITE_LOOP
     MOVE.B  (A3)+,(A4)+     * Write one byte and increment
     CMP.B   #0,(A3)         * Are we at the null terminator?
@@ -59,7 +60,7 @@ CODE_NOP    EQU     $4E71
 CODE_RTS    EQU     $4E75
 
 *** Variable used to store the previous value of A1 before writing
-A4_PREV     SET     $2323
+A4_PREV     SET     $2000
 
 *** Strings for opcodes (write these to memory)
 S_NOP   DC.B    'NOP',0
@@ -67,6 +68,7 @@ S_RTS   DC.B    'RTS',0
 S_MOVE  DC.B    'MOVE',0
 
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
 
 *~Font name~Courier New~
 *~Font size~12~

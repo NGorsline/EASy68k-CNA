@@ -114,18 +114,21 @@ MAIN_LOOP
     *BRA     END_NOW
     CMPA.L  A5,A6
     BGE     END_NOW * End program
-    BRA     OP_DECODE
-    MOVEA.L #A4_PREV,A0 * Move where A4 was before OP_DECODE into A0 for iteration
+    JSR     OP_DECODE
+    *MOVEA.L #A4_PREV,A0 * Move where A4 was before OP_DECODE into A0 for iteration
     
 PRINT_LOOP ;; Print the most recently decoded line
     * If finished printing, return to decode loop
-    CMP.L   A0,A4       * Did we print the whole decoded line yet?
-    BGE     MAIN_LOOP
-    MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
+    *CMP.L   A0,A4       * Did we print the whole decoded line yet?
+    *BGE     MAIN_LOOP
+    *MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
     
-    MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
+    *MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
+    *TRAP    #15
+    
+    MOVE.B  #1,D0
     TRAP    #15
-    BRA     PRINT_LOOP
+    BRA     MAIN_LOOP
     
     
     
@@ -226,6 +229,7 @@ END_NOW
     TRAP    #15
     LEA     buffer,A1
     END    START        ; last line of source
+
 
 
 
