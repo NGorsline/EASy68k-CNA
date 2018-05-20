@@ -16,12 +16,11 @@ OP_DECODE
     
     * is it NOP?
     CMP.W   #CODE_NOP,D5
-    BEQ     DO_NOP       * This will take it on back to the I/O module
+    BEQ     DO_NOP      * After execution of this branch, will return to I/O
     
     * is it RTS?
     CMP.W   #CODE_RTS,D5
-    BEQ     DO_RTS       * This will take it on back to the I/O module
-    
+    BEQ     DO_RTS      * After execution of this branch, will return to I/O
     
     ** Not NOP or RTS, check bit-by-bit to narrow down
     
@@ -37,39 +36,78 @@ OP_DECODE
 OXXX_BRA
     BTST.L  #14,D5      * Test the second bit 
     BEQ     OOXX_BRA    * Branch to opcodes starting with 00
-    * BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
+    BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
 
 OOXX_BRA
-    BTST.L  #13,D5      * Test the second bit 
-    BEQ     OOOX_BRA    * Branch to opcodes starting with 000
-    * BRA     OIIX_BRA    * Branch to opcodes starting with 011   *** COME BAK
-    
-OOOX_BRA
-    BTST.L  #12,D5      * Test the second bit 
-    BEQ     OOOO_BRA    * Decision for SUBI or ADDI
-    * BRA     OIII_BRA    * Branch to opcodes starting with 01   *** COME BAK
-
-OOOO_BRA                * tests for ADDI or SUBI
-*COME BAKKKKKKKPLZ
-
+    BTST.L  #13,D5          * Test the second bit 
+    BEQ     OOOX_BRA        * Branch to opcodes starting with 000
+    BRA     OOIX_BRA        * Might be MOVE, MOVEA
+    BRA     PRINT_INVALID_MSG
 OIXX_BRA
     BTST.L  #13,D5
     BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
-    
+    BRA     OIIX_BRA    * BCC, OR MOVEQ
+OOOX_BRA
+    BTST.L  #12,D5              * Test the second bit 
+    BEQ     OOOO_BRA            * Decision for SUBI or ADDI
+    BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+OOIX_BRA
+    * BTST.L  #12,D5              * Test the second bit 
+    * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
+    BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+
+
+OOOO_BRA                    * tests for ADDI or SUBI
+    MOVE.W  #ADDI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
+    AND.W   D5,D2           * AND with current opcode data and store into D2
+    CMP.W   #$0600,D2       * Result of mask should be 0060 if the code is ADDi
+    BEQ     DO_ADDI     
+    MOVE.W  #SUBI_MASK,D2   * If it wasn't ADDI operation, check for SUBI
+    AND.W   D5,D2
+    CMP.W   #$0400,D2
+    BEQ     DO_SUBI
+    BRA     PRINT_INVALID_MSG
 OIOX_BRA
     BTST.L  #12,D5
-    BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA
-    
+    BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
+    BRA     DO_ADDQ    * ADDQ 
+OIIX_BRA
+    *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
+    BTST.L  #12,D5
+    BEQ     OIIO_BRA            * BCC and MOVEQ happens here
+    BRA     PRINT_INVALID_MSG   * There is no 0111
 OIOO_BRA
     ** Test for JSR
     MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
     AND.W   D5,D2        * AND with the current opcode data
     CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
     BEQ     DO_JSR       * 
-    *WHAT ELSE CAN THIS BE? TBD 
-    
+    BRA     PRINT_INVALID_MSG
+
+OIIO_BRA
+    BRA     PRINT_COME_BACK_MSG   * Need halp 
+
 ;; Typical structure for these chunks:
-* 
+*
+DO_ADDI
+    LEA     S_ADDI,A3
+    MOVE.B  #1,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_SUBI
+    LEA     S_SUBI,A3
+    MOVE.B  #1,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_ADDQ
+    *Check for full opcode for 11 and onwards. if invalid, print the message
+    LEA     S_ADDQ,A3
+    MOVE.B  #1,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
 
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
@@ -99,7 +137,19 @@ DO_JSR
     ** Eventually, NOCK will be called here
     JSR     WRITE
     RTS
-   
+PRINT_INVALID_MSG
+    LEA     INVALID,A3
+    MOVE.B  #0,D7
+    ** Eventually, NOCK will be called here
+    JSR     WRITE
+    RTS
+
+PRINT_COME_BACK_MSG
+    LEA     COMEBK,A3
+    MOVE.B  #0,D7
+    ** Eventually, NOCK will be called here
+    JSR     WRITE
+    RTS
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
@@ -125,9 +175,20 @@ S_NOP   DC.B    'NOP',0
 S_RTS   DC.B    'RTS',0
 S_MOVE  DC.B    'MOVE',0
 S_JSR   DC.B    'JSR',0
+S_ADDQ  DC.B    'ADDQ',0
+S_ADDI  DC.B    'ADDI',0
+S_SUBI  DC.B    'SUBI',0
+INVALID DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
+COMEBK  DC.B    'Come back to me pls dont forget me',0 
+
 
 *** Mask constants 
 JSR_MASK    EQU     %0000111010000000
+ADDI_MASK   EQU     %0000011000000000
+SUBI_MASK   EQU     %0000010000000000
+BYTE_MASK   EQU     %0000000000000000
+WORD_MASK   EQU     %0000000001000000
+LONG_MASK   EQU     %0000000010000000         
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 

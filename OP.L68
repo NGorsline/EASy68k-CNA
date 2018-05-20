@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/19/2018 11:18:58 PM
+Created On: 5/20/2018 3:54:37 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : Opcode module
@@ -15,129 +15,188 @@ Created On: 5/19/2018 11:18:58 PM
 00000000                            11  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
 00000000                            12  
 00000000                            13  OP_DECODE
-00000000  4E71                      14      NOP     * Include from IO causes the first byte to be overwritten
-00000002  4E71                      15      NOP     * Without these, first line will be skipped 
-00000004  4E71                      16      NOP
-00000006  3A1E                      17      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
-00000008                            18      * NOTE: A6 now points at either the next opcode or imm. data for EA part
-00000008                            19      
-00000008                            20      * is it NOP?
-00000008  BA7C 4E71                 21      CMP.W   #CODE_NOP,D5
-0000000C  6700 004E                 22      BEQ     DO_NOP       * This will take it on back to the I/O module
-00000010                            23      
-00000010                            24      * is it RTS?
-00000010  BA7C 4E75                 25      CMP.W   #CODE_RTS,D5
-00000014  6700 0058                 26      BEQ     DO_RTS       * This will take it on back to the I/O module
-00000018                            27      
-00000018                            28      
-00000018                            29      ** Not NOP or RTS, check bit-by-bit to narrow down
-00000018                            30      
-00000018  0805 000F                 31      BTST.L  #15,D5       * Test the most significant bit of the command
-0000001C  6700 0008                 32      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
-00000020                            33      * BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
-00000020                            34     
-00000020  6000 003A                 35      BRA     DO_NOP
-00000024  4E75                      36      RTS * Return to I/O module (temporary; will go to EA module eventually)
-00000026                            37      
-00000026                            38      
-00000026                            39  ;; ~~~~~~~~BRANCHES FOR NARROWING OPCODE SELECTION~~~~~~~~
-00000026                            40  OXXX_BRA
-00000026  0805 000E                 41      BTST.L  #14,D5      * Test the second bit 
-0000002A  6700 0002                 42      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
-0000002E                            43      * BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
-0000002E                            44  
-0000002E                            45  OOXX_BRA
-0000002E  0805 000D                 46      BTST.L  #13,D5      * Test the second bit 
-00000032  6700 0002                 47      BEQ     OOOX_BRA    * Branch to opcodes starting with 000
-00000036                            48      * BRA     OIIX_BRA    * Branch to opcodes starting with 011   *** COME BAK
-00000036                            49      
-00000036                            50  OOOX_BRA
-00000036  0805 000C                 51      BTST.L  #12,D5      * Test the second bit 
-0000003A  6700 0002                 52      BEQ     OOOO_BRA    * Decision for SUBI or ADDI
-0000003E                            53      * BRA     OIII_BRA    * Branch to opcodes starting with 01   *** COME BAK
-0000003E                            54  
-0000003E                            55  OOOO_BRA                * tests for ADDI or SUBI
-0000003E                            56  *COME BAKKKKKKKPLZ
-0000003E                            57  
-0000003E                            58  OIXX_BRA
-0000003E  0805 000D                 59      BTST.L  #13,D5
-00000042  6700 0002                 60      BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
-00000046                            61      
-00000046                            62  OIOX_BRA
-00000046  0805 000C                 63      BTST.L  #12,D5
-0000004A  6700 0002                 64      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA
-0000004E                            65      
-0000004E                            66  OIOO_BRA
-0000004E                            67      ** Test for JSR
-0000004E  343C 0E80                 68      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
-00000052  C445                      69      AND.W   D5,D2        * AND with the current opcode data
-00000054  B47C 0E80                 70      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
-00000058  6700 0038                 71      BEQ     DO_JSR       * 
-0000005C                            72      *WHAT ELSE CAN THIS BE? TBD 
-0000005C                            73      
-0000005C                            74  ;; Typical structure for these chunks:
-0000005C                            75  * 
-0000005C                            76  
-0000005C                            77  DO_NOP
-0000005C  47F9 000000B2             78      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-00000062  1E3C 0001                 79      MOVE.B  #1,D7       * Store key for op code for EA module
-00000066                            80      ** Eventually, EA Module will be called here
-00000066  4EB9 000000A4             81      JSR     WRITE       * Jump to WRITE subroutine
-0000006C  4E75                      82      RTS                 * Return to I/O module 
-0000006E                            83      
-0000006E                            84  
-0000006E                            85  DO_RTS
-0000006E  47F9 000000B6             86      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-00000074  1E3C 001C                 87      MOVE.B  #28,D7      * Store key for op code for EA module
-00000078                            88      ** Eventually, EA Module will be called here
-00000078  4EB9 000000A4             89      JSR     WRITE       * Jump to WRITE subroutine
-0000007E  4E75                      90      RTS                 * Return to the I/O module bra op_decode
-00000080                            91      
-00000080                            92  DO_MOVE
-00000080  47F9 000000BA             93      LEA     S_MOVE,A3
-00000086  1E3C 0002                 94      MOVE.B  #2,D7
-0000008A                            95      ** Eventually, EA Module will be called here
-0000008A  4EB9 000000A4             96      JSR     WRITE
-00000090  4E75                      97      RTS
-00000092                            98      
-00000092                            99  DO_JSR
-00000092  47F9 000000BF            100      LEA     S_JSR,A3
-00000098  1E3C 001B                101      MOVE.B  #27,D7
-0000009C                           102      ** Eventually, NOCK will be called here
-0000009C  4EB9 000000A4            103      JSR     WRITE
-000000A2  4E75                     104      RTS
-000000A4                           105     
-000000A4                           106  *** A3 -> String to write (load before calling)
-000000A4                           107  *** A4 -> Location in memory to write to 
-000000A4                           108  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-000000A4  224C                     109      MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
-000000A6                           110  WRITE_LOOP
-000000A6  18DB                     111      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
-000000A8  0C13 0000                112      CMP.B   #0,(A3)         * Are we at the null terminator?
-000000AC  66F8                     113      BNE     WRITE_LOOP      * If not, keep going
-000000AE  18DB                     114      MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
-000000B0  4E75                     115      RTS                     * Executes once null terminator was reached
-000000B2                           116      
-000000B2                           117  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
-000000B2                           118  
-000000B2                           119  *** ML constants for op-codes without EA modes (NOP, RTS)
-000000B2  =00004E71                120  CODE_NOP    EQU     $4E71
-000000B2  =00004E75                121  CODE_RTS    EQU     $4E75
-000000B2                           122  
-000000B2                           123  *** Variable used to store the previous value of A1 before writing
-000000B2  =00002000                124  A4_PREV     SET     $2000
-000000B2                           125  
-000000B2                           126  *** Strings for opcodes (write these to memory)
-000000B2= 4E 4F 50 00              127  S_NOP   DC.B    'NOP',0
-000000B6= 52 54 53 00              128  S_RTS   DC.B    'RTS',0
-000000BA= 4D 4F 56 45 00           129  S_MOVE  DC.B    'MOVE',0
-000000BF= 4A 53 52 00              130  S_JSR   DC.B    'JSR',0
-000000C3                           131  
-000000C3                           132  *** Mask constants 
-000000C3  =00000E80                133  JSR_MASK    EQU     %0000111010000000
-000000C3                           134  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-000000C3                           135  
-Line 136 WARNING: END directive missing, starting address not set
+00000000  3A1E                      14      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+00000002                            15      * NOTE: A6 now points at either the next opcode or imm. data for EA part
+00000002                            16      
+00000002                            17      * is it NOP?
+00000002  BA7C 4E71                 18      CMP.W   #CODE_NOP,D5
+00000006  6700 00D4                 19      BEQ     DO_NOP      * After execution of this branch, will return to I/O
+0000000A                            20      
+0000000A                            21      * is it RTS?
+0000000A  BA7C 4E75                 22      CMP.W   #CODE_RTS,D5
+0000000E  6700 00DE                 23      BEQ     DO_RTS      * After execution of this branch, will return to I/O
+00000012                            24      
+00000012                            25      ** Not NOP or RTS, check bit-by-bit to narrow down
+00000012                            26      
+00000012  0805 000F                 27      BTST.L  #15,D5       * Test the most significant bit of the command
+00000016  6700 0008                 28      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
+0000001A                            29      * BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
+0000001A                            30     
+0000001A  6000 00C0                 31      BRA     DO_NOP
+0000001E  4E75                      32      RTS * Return to I/O module (temporary; will go to EA module eventually)
+00000020                            33      
+00000020                            34      
+00000020                            35  ;; ~~~~~~~~BRANCHES FOR NARROWING OPCODE SELECTION~~~~~~~~
+00000020                            36  OXXX_BRA
+00000020  0805 000E                 37      BTST.L  #14,D5      * Test the second bit 
+00000024  6700 0006                 38      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
+00000028  6000 0012                 39      BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
+0000002C                            40  
+0000002C                            41  OOXX_BRA
+0000002C  0805 000D                 42      BTST.L  #13,D5          * Test the second bit 
+00000030  6700 0016                 43      BEQ     OOOX_BRA        * Branch to opcodes starting with 000
+00000034  6000 001E                 44      BRA     OOIX_BRA        * Might be MOVE, MOVEA
+00000038  6000 00EA                 45      BRA     PRINT_INVALID_MSG
+0000003C                            46  OIXX_BRA
+0000003C  0805 000D                 47      BTST.L  #13,D5
+00000040  6700 0036                 48      BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
+00000044  6000 003E                 49      BRA     OIIX_BRA    * BCC, OR MOVEQ
+00000048                            50  OOOX_BRA
+00000048  0805 000C                 51      BTST.L  #12,D5              * Test the second bit 
+0000004C  6700 000A                 52      BEQ     OOOO_BRA            * Decision for SUBI or ADDI
+00000050  6000 00E4                 53      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+00000054                            54  OOIX_BRA
+00000054                            55      * BTST.L  #12,D5              * Test the second bit 
+00000054                            56      * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
+00000054  6000 00E0                 57      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+00000058                            58  
+00000058                            59  
+00000058                            60  OOOO_BRA                    * tests for ADDI or SUBI
+00000058  343C 0600                 61      MOVE.W  #ADDI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
+0000005C  C445                      62      AND.W   D5,D2           * AND with current opcode data and store into D2
+0000005E  B47C 0600                 63      CMP.W   #$0600,D2       * Result of mask should be 0060 if the code is ADDi
+00000062  6700 0042                 64      BEQ     DO_ADDI     
+00000066  343C 0400                 65      MOVE.W  #SUBI_MASK,D2   * If it wasn't ADDI operation, check for SUBI
+0000006A  C445                      66      AND.W   D5,D2
+0000006C  B47C 0400                 67      CMP.W   #$0400,D2
+00000070  6700 0046                 68      BEQ     DO_SUBI
+00000074  6000 00AE                 69      BRA     PRINT_INVALID_MSG
+00000078                            70  OIOX_BRA
+00000078  0805 000C                 71      BTST.L  #12,D5
+0000007C  6700 0012                 72      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
+00000080  6000 0048                 73      BRA     DO_ADDQ    * ADDQ 
+00000084                            74  OIIX_BRA
+00000084                            75      *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
+00000084  0805 000C                 76      BTST.L  #12,D5
+00000088  6700 0018                 77      BEQ     OIIO_BRA            * BCC and MOVEQ happens here
+0000008C  6000 0096                 78      BRA     PRINT_INVALID_MSG   * There is no 0111
+00000090                            79  OIOO_BRA
+00000090                            80      ** Test for JSR
+00000090  343C 0E80                 81      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
+00000094  C445                      82      AND.W   D5,D2        * AND with the current opcode data
+00000096  B47C 0E80                 83      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
+0000009A  6700 0076                 84      BEQ     DO_JSR       * 
+0000009E  6000 0084                 85      BRA     PRINT_INVALID_MSG
+000000A2                            86  
+000000A2                            87  OIIO_BRA
+000000A2  6000 0092                 88      BRA     PRINT_COME_BACK_MSG   * Need halp 
+000000A6                            89  
+000000A6                            90  ;; Typical structure for these chunks:
+000000A6                            91  *
+000000A6                            92  DO_ADDI
+000000A6  47F9 0000016C             93      LEA     S_ADDI,A3
+000000AC  1E3C 0001                 94      MOVE.B  #1,D7
+000000B0                            95      ** Eventually, EA Module will be called here
+000000B0  4EB9 00000148             96      JSR     WRITE
+000000B6  4E75                      97      RTS
+000000B8                            98  DO_SUBI
+000000B8  47F9 00000171             99      LEA     S_SUBI,A3
+000000BE  1E3C 0001                100      MOVE.B  #1,D7
+000000C2                           101      ** Eventually, EA Module will be called here
+000000C2  4EB9 00000148            102      JSR     WRITE
+000000C8  4E75                     103      RTS
+000000CA                           104  DO_ADDQ
+000000CA                           105      *Check for full opcode for 11 and onwards. if invalid, print the message
+000000CA  47F9 00000167            106      LEA     S_ADDQ,A3
+000000D0  1E3C 0001                107      MOVE.B  #1,D7
+000000D4                           108      ** Eventually, EA Module will be called here
+000000D4  4EB9 00000148            109      JSR     WRITE
+000000DA  4E75                     110      RTS
+000000DC                           111  
+000000DC                           112  DO_NOP
+000000DC  47F9 00000156            113      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+000000E2  1E3C 0001                114      MOVE.B  #1,D7       * Store key for op code for EA module
+000000E6                           115      ** Eventually, EA Module will be called here
+000000E6  4EB9 00000148            116      JSR     WRITE       * Jump to WRITE subroutine
+000000EC  4E75                     117      RTS                 * Return to I/O module 
+000000EE                           118      
+000000EE                           119  
+000000EE                           120  DO_RTS
+000000EE  47F9 0000015A            121      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+000000F4  1E3C 001C                122      MOVE.B  #28,D7      * Store key for op code for EA module
+000000F8                           123      ** Eventually, EA Module will be called here
+000000F8  4EB9 00000148            124      JSR     WRITE       * Jump to WRITE subroutine
+000000FE  4E75                     125      RTS                 * Return to the I/O module bra op_decode
+00000100                           126      
+00000100                           127  DO_MOVE
+00000100  47F9 0000015E            128      LEA     S_MOVE,A3
+00000106  1E3C 0002                129      MOVE.B  #2,D7
+0000010A                           130      ** Eventually, EA Module will be called here
+0000010A  4EB9 00000148            131      JSR     WRITE
+00000110  4E75                     132      RTS
+00000112                           133      
+00000112                           134  DO_JSR
+00000112  47F9 00000163            135      LEA     S_JSR,A3
+00000118  1E3C 001B                136      MOVE.B  #27,D7
+0000011C                           137      ** Eventually, NOCK will be called here
+0000011C  4EB9 00000148            138      JSR     WRITE
+00000122  4E75                     139      RTS
+00000124                           140  PRINT_INVALID_MSG
+00000124  47F9 00000176            141      LEA     INVALID,A3
+0000012A  1E3C 0000                142      MOVE.B  #0,D7
+0000012E                           143      ** Eventually, NOCK will be called here
+0000012E  4EB9 00000148            144      JSR     WRITE
+00000134  4E75                     145      RTS
+00000136                           146  
+00000136                           147  PRINT_COME_BACK_MSG
+00000136  47F9 000001A2            148      LEA     COMEBK,A3
+0000013C  1E3C 0000                149      MOVE.B  #0,D7
+00000140                           150      ** Eventually, NOCK will be called here
+00000140  4EB9 00000148            151      JSR     WRITE
+00000146  4E75                     152      RTS
+00000148                           153  *** A3 -> String to write (load before calling)
+00000148                           154  *** A4 -> Location in memory to write to 
+00000148                           155  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+00000148  224C                     156      MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
+0000014A                           157  WRITE_LOOP
+0000014A  18DB                     158      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
+0000014C  0C13 0000                159      CMP.B   #0,(A3)         * Are we at the null terminator?
+00000150  66F8                     160      BNE     WRITE_LOOP      * If not, keep going
+00000152  18DB                     161      MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
+00000154  4E75                     162      RTS                     * Executes once null terminator was reached
+00000156                           163      
+00000156                           164  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+00000156                           165  
+00000156                           166  *** ML constants for op-codes without EA modes (NOP, RTS)
+00000156  =00004E71                167  CODE_NOP    EQU     $4E71
+00000156  =00004E75                168  CODE_RTS    EQU     $4E75
+00000156                           169  
+00000156                           170  *** Variable used to store the previous value of A1 before writing
+00000156  =00002000                171  A4_PREV     SET     $2000
+00000156                           172  
+00000156                           173  *** Strings for opcodes (write these to memory)
+00000156= 4E 4F 50 00              174  S_NOP   DC.B    'NOP',0
+0000015A= 52 54 53 00              175  S_RTS   DC.B    'RTS',0
+0000015E= 4D 4F 56 45 00           176  S_MOVE  DC.B    'MOVE',0
+00000163= 4A 53 52 00              177  S_JSR   DC.B    'JSR',0
+00000167= 41 44 44 51 00           178  S_ADDQ  DC.B    'ADDQ',0
+0000016C= 41 44 44 49 00           179  S_ADDI  DC.B    'ADDI',0
+00000171= 53 55 42 49 00           180  S_SUBI  DC.B    'SUBI',0
+00000176= 49 4E 56 41 4C 49 ...    181  INVALID DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
+000001A2= 43 6F 6D 65 20 62 ...    182  COMEBK  DC.B    'Come back to me pls dont forget me',0 
+000001C5                           183  
+000001C5                           184  
+000001C5                           185  *** Mask constants 
+000001C5  =00000E80                186  JSR_MASK    EQU     %0000111010000000
+000001C5  =00000600                187  ADDI_MASK   EQU     %0000011000000000
+000001C5  =00000400                188  SUBI_MASK   EQU     %0000010000000000
+000001C5  =00000000                189  BYTE_MASK   EQU     %0000000000000000
+000001C5  =00000040                190  WORD_MASK   EQU     %0000000001000000
+000001C5  =00000080                191  LONG_MASK   EQU     %0000000010000000         
+000001C5                           192  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+000001C5                           193  
+000001C5                           194  
+Line 195 WARNING: END directive missing, starting address not set
 
 No errors detected
 1 warning generated
@@ -147,24 +206,42 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 A4_PREV             2000
+ADDI_MASK           600
+BYTE_MASK           0
 CODE_NOP            4E71
 CODE_RTS            4E75
-DO_JSR              92
-DO_MOVE             80
-DO_NOP              5C
-DO_RTS              6E
+COMEBK              1A2
+DO_ADDI             A6
+DO_ADDQ             CA
+DO_JSR              112
+DO_MOVE             100
+DO_NOP              DC
+DO_RTS              EE
+DO_SUBI             B8
+INVALID             176
 JSR_MASK            E80
-OIOO_BRA            4E
-OIOX_BRA            46
-OIXX_BRA            3E
-OOOO_BRA            3E
-OOOX_BRA            36
-OOXX_BRA            2E
+LONG_MASK           80
+OIIO_BRA            A2
+OIIX_BRA            84
+OIOO_BRA            90
+OIOX_BRA            78
+OIXX_BRA            3C
+OOIX_BRA            54
+OOOO_BRA            58
+OOOX_BRA            48
+OOXX_BRA            2C
 OP_DECODE           0
-OXXX_BRA            26
-S_JSR               BF
-S_MOVE              BA
-S_NOP               B2
-S_RTS               B6
-WRITE               A4
-WRITE_LOOP          A6
+OXXX_BRA            20
+PRINT_COME_BACK_MSG  136
+PRINT_INVALID_MSG   124
+SUBI_MASK           400
+S_ADDI              16C
+S_ADDQ              167
+S_JSR               163
+S_MOVE              15E
+S_NOP               156
+S_RTS               15A
+S_SUBI              171
+WORD_MASK           40
+WRITE               148
+WRITE_LOOP          14A

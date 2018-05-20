@@ -117,14 +117,15 @@ MAIN_LOOP
     *MOVE.W  A6,D0   * Copy A6 location to restore after jump to SR
     JSR     OP_DECODE
     
+<<<<<<< Updated upstream
 PRINT_LOOP ;; Print the most recently decoded line
+=======
+PRINT_LOOP ;; Print the most recently decoded line    
+>>>>>>> Stashed changes
     MOVE.B  #13,D0
     TRAP    #15
     BRA     MAIN_LOOP
     
-    
-    
-  
 ;; print nops
 PRINT_NOPS_TEST
     MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
@@ -231,6 +232,11 @@ END_NOW
 
 
 
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 *~Font name~Courier New~
 *~Font size~12~
 *~Tab type~1~
