@@ -1,8 +1,8 @@
 *-----------------------------------------------------------
 * Title      : NOPs
-* Written by :
-* Date       :
-* Description: Testing file for 
+* Written by : Clayton Snyder, Audrey Chae (Toucans)
+* Date       : 5/19/2018
+* Description: Testing file for 68k disassembler
 *-----------------------------------------------------------
     ORG    $0300
 START:                  ; first instruction of program
