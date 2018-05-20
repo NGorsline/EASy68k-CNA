@@ -114,19 +114,11 @@ MAIN_LOOP
     *BRA     END_NOW
     CMPA.L  A5,A6
     BGE     END_NOW * End program
+    *MOVE.W  A6,D0   * Copy A6 location to restore after jump to SR
     JSR     OP_DECODE
-    *MOVEA.L #A4_PREV,A0 * Move where A4 was before OP_DECODE into A0 for iteration
     
 PRINT_LOOP ;; Print the most recently decoded line
-    * If finished printing, return to decode loop
-    *CMP.L   A0,A4       * Did we print the whole decoded line yet?
-    *BGE     MAIN_LOOP
-    *MOVE.B  (A0)+,D1    * Load the byte at A0 to D1 to print
-    
-    *MOVE.B  #6,D0       * Trap task 6 to print the byte in D1
-    *TRAP    #15
-    
-    MOVE.B  #1,D0
+    MOVE.B  #13,D0
     TRAP    #15
     BRA     MAIN_LOOP
     
@@ -220,16 +212,17 @@ CR              EQU      $0D
 buffer  DC.L    1
 
 DISM_CODE     EQU     $8000 * Where to write disassembled code
-
-    INCLUDE 'OP.x68'
+    
+    NOP
 
 END_NOW
     LEA     DONE_MSG,A1
     MOVE.B  #1,D0
     TRAP    #15
     LEA     buffer,A1
+    
+    INCLUDE 'OP.X68'
     END    START        ; last line of source
-
 
 
 

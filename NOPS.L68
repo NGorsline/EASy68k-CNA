@@ -1,0 +1,44 @@
+00000300 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/19/2018 10:14:05 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : NOPs
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description: Testing file for 
+00000000                             6  *-----------------------------------------------------------
+00000300                             7      ORG    $0300
+00000300                             8  START:                  ; first instruction of program
+00000300  4EB9 00000306              9      JSR HAI
+00000306                            10  HAI
+00000306  4E71                      11      NOP
+00000308  4E71                      12      NOP
+0000030A  4E71                      13      NOP
+0000030C  4E71                      14      NOP
+0000030E  4E71                      15      NOP
+00000310  4E71                      16      NOP
+00000312  4E71                      17      NOP
+00000314  4E71                      18      NOP
+00000316  4E71                      19      NOP
+00000318  4E71                      20      NOP
+0000031A  4E75                      21      RTS
+0000031C  4E71                      22      NOP
+0000031E  4E71                      23      NOP
+00000320  4EB8 0306                 24      JSR HAI
+00000324  4E75                      25      RTS
+00000326  4E71                      26      NOP
+00000328  4E71                      27      NOP
+0000032A  4E71                      28      NOP
+0000032C                            29      
+0000032C                            30      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+HAI                 306
+START               300
