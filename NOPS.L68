@@ -1,6 +1,6 @@
 00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/20/2018 5:51:51 PM
+Created On: 5/20/2018 10:27:19 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : NOPs
@@ -24,11 +24,25 @@ Created On: 5/20/2018 5:51:51 PM
 0000031E  4245                      20      CLR     D5
 00000320  4E75                      21      RTS
 00000322  45F9 DC00FF00             22      LEA $DC00FF00,A2
-00000328  4E71                      23      NOP
-0000032A  4E71                      24      NOP
-0000032C  4E71                      25      NOP
-0000032E                            26      
-0000032E                            27      END    START        ; last line of source
+00000328  7EFF                      23      MOVEQ #$FF,D7
+0000032A                            24      
+0000032A  B47C 1111                 25      CMP.W   #$1111,D2
+0000032E  6ED6                      26      BGT     HAI
+00000330  B47C 1111                 27      CMP.W   #$1111,D2
+00000334  6FD0                      28      BLE     HAI
+00000336  B47C 1111                 29      CMP.W   #$1111,D2
+0000033A  64CA                      30      BCC     HAI  
+0000033C  143C 0012                 31      MOVE.B  #$12,D2
+00000340  163C 0012                 32      MOVE.B  #$12,D3
+00000344  387C 1234                 33      MOVEA.W #$1234,A4
+00000348  343C 1234                 34      MOVE.W  #$1234,D2
+0000034C  287C 12340000             35      MOVE.L  #$12340000,A4
+00000352  244C                      36      MOVEA.L A4,A2
+00000354  4E71                      37      NOP
+00000356  4E71                      38      NOP
+00000358  4E71                      39      NOP
+0000035A                            40      
+0000035A                            41      END    START        ; last line of source
 
 No errors detected
 No warnings generated

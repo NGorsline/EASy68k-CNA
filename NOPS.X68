@@ -20,11 +20,21 @@ HAI
     CLR     D5
     RTS
     LEA	$DC00FF00,A2
+    MOVEQ #$FF,D7
+    
+    CMP.W   #$1111,D2
+    BGT     HAI
+    CMP.W   #$1111,D2
+    BLE     HAI
+    CMP.W   #$1111,D2
+    BCC     HAI  
+
     NOP
     NOP
     NOP
     
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~12~

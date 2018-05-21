@@ -44,16 +44,17 @@ OOXX_BRA
     BRA     PRINT_INVALID_MSG
 OIXX_BRA
     BTST.L  #13,D5
-    BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
-    BRA     OIIX_BRA    * BCC, OR MOVEQ
+    BEQ     OIOX_BRA            * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
+    BRA     OIIX_BRA            * BCC, OR MOVEQ
 OOOX_BRA
     BTST.L  #12,D5              * Test the second bit 
     BEQ     OOOO_BRA            * Decision for SUBI or ADDI
-    BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+    BRA     OOOI_BRA            * MOVE and MOVEA (B)
 OOIX_BRA
-    * BTST.L  #12,D5              * Test the second bit 
-    * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
-    BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+    BTST.L  #12,D5              * Test the second bit 
+    BEQ     OOIO_BRA            * MOVE or MOVEA need to be handled here (W)
+    BRA     OOII_BRA            * MOVE or MOVEA need to be handled here (L)
+
 OOOO_BRA                        * tests for ADDI or SUBI
     MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
     AND.W   D5,D2               * AND with current opcode data and store into D2
@@ -62,15 +63,46 @@ OOOO_BRA                        * tests for ADDI or SUBI
     CMP.W   #$0400,D2           * SUBI and ADDI  have the same bitmask.
     BEQ     DO_SUBI
     BRA     PRINT_INVALID_MSG
+OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
+    MOVE.W  MOVE_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$1000,D2           * is it a move byte?
+    BEQ     DO_MOVE_B           
+
+    BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
+OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
+    MOVE.W  MOVEA_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$2040,D2           * is it a moveA word?
+    BEQ     DO_MOVEA_W          
+
+    MOVE.W  MOVE_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$2000,D2           * is it a move word?
+    BEQ     DO_MOVE_W           
+
+    BRA     PRINT_INVALID_MSG
+OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
+    MOVE.W  MOVEA_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$3040,D2           * is it a moveA long?
+    BEQ     DO_MOVEA_L          
+
+    MOVE.W  MOVE_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$3000,D2           * is it a move long?
+    BEQ     DO_MOVE_L           
+
+    BRA     PRINT_INVALID_MSG
 OIOX_BRA
     BTST.L  #12,D5
     BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
-    BRA     DO_ADDQ    * ADDQ 
+    BRA     DO_ADDQ     * ADDQ 
 OIIX_BRA
     *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
     BTST.L  #12,D5
-    BEQ     OIIO_BRA            * BCC and MOVEQ happens here
-    BRA     PRINT_INVALID_MSG   * There is no 0111
+    BEQ     DO_Bcc            * BCC happens here, have to narrow it down to which one!
+    BRA     DO_MOVEQ   
 OIOO_BRA
     ** Test for JSR
     MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
@@ -89,18 +121,77 @@ OIOO_BRA
     BEQ.W   DO_LEA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
-OIIO_BRA
-    BRA     PRINT_COME_BACK_MSG   * Need halp 
-
 *------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
 IXXX_BRA
-    BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch 
+    BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch
+    
+*------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
+DO_MOVE_B
+    LEA     S_MOVE_B,A3
+    MOVE.B  #$2A,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MOVEA_W
+    LEA     S_MOVEA_W,A3
+    MOVE.B  #$3B,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MOVE_W
+    LEA     S_MOVE_W,A3
+    MOVE.B  #$2B,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MOVEA_L
+    LEA     S_MOVEA_L,A3
+    MOVE.B  #$3C,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MOVE_L
+    LEA     S_MOVE_L,A3
+    MOVE.B  #$2C,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
 
-;; Typical structure for these chunks:
-*
+DO_BCC_CASE
+    MOVE.W  #Bcc_MASK,D2
+    AND     D5,D2
+    CMP.W   #$0E00,D2                * Is it BGT?
+    BEQ.W   DO_BGT
+    
+    CMP.W   #$0F00,D2                * Is it BLE?
+    BEQ.W   DO_BLE
+
+    CMP.W   #$0400,D2                * Is it BCC?
+    BEQ.W   DO_BCC
+
+    BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
+
 DO_ADDI
     LEA     S_ADDI,A3
     MOVE.B  #8,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_BGT
+    LEA     S_BGT,A3
+    MOVE.B  #26,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_BLE
+    LEA     S_BLE,A3
+    MOVE.B  #27,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_BCC
+    LEA     S_BCC,A3
+    MOVE.B  #28,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
@@ -137,7 +228,7 @@ DO_NOP
     RTS                 * Return to I/O module 
 DO_RTS
     LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-    MOVE.B  #28,D7      * Store key for op code for EA module
+    MOVE.B  #30,D7      * Store key for op code for EA module
     ** Eventually, EA Module will be called here
     JSR     WRITE       * Jump to WRITE subroutine
     RTS                 * Return to the I/O module bra op_decode  
@@ -147,7 +238,11 @@ DO_MOVE
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
-    
+DO_MOVEQ
+    LEA     S_MOVEQ,A3
+    MOVE.B  #4,D7
+    JSR     WRITE
+    RTS
 DO_JSR
     LEA     S_JSR,A3
     MOVE.B  #27,D7
@@ -202,6 +297,18 @@ S_ADDI      DC.B    'ADDI',0
 S_SUBI      DC.B    'SUBI',0
 S_CLR       DC.B    'CLR',0
 S_LEA       DC.B    'LEA',0    
+S_MOVEQ     DC.B    'MOVEQ',0
+S_BGT       DC.B    'BGT',0
+S_BLE       DC.B    'BLE',0
+S_BCC       DC.B    'BCC',0
+S_MOVE_B    DC.B    'MOVE.B',0
+S_MOVEA_W   DC.B    'MOVEA.W',0
+S_MOVE_W    DC.B    'MOVE.B',0
+S_MOVEA_L   DC.B    'MOVEA.L',0
+S_MOVE_L    DC.B    'MOVE.L',0
+
+
+*** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 
 BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
@@ -209,11 +316,15 @@ BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 *** Mask constants 
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
-BYTE_MASK       EQU     %0000000000000000
-WORD_MASK       EQU     %0000000001000000
-LONG_MASK       EQU     %0000000010000000  
+BYTE_MASK       EQU     %0000000000000000       * Not sure if this is needed
+WORD_MASK       EQU     %0000000001000000       * not sure if this is needed
+LONG_MASK       EQU     %0000000010000000       * not sure if this is needed
 CLR_MASK        EQU     %0000111100000000
 LEA_MASK        EQU     %0000000111000000
+Bcc_MASK        EQU     %0000111100000000
+
+MOVEA_MASK      EQU     %0011000111000000
+MOVE_MASK       EQU     %0011000000000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 
