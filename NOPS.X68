@@ -9,20 +9,17 @@ START:                  ; first instruction of program
     JSR HAI
 HAI
     NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
+    ADDI.B  #$AB,D5
     NOP
     NOP
     RTS
     NOP
     NOP
     JSR HAI
+    SUBI.B  #$11,D5
+    CLR     D5
     RTS
+    LEA	$DC00FF00,A2
     NOP
     NOP
     NOP

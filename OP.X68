@@ -26,13 +26,12 @@ OP_DECODE
     
     BTST.L  #15,D5       * Test the most significant bit of the command
     BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
-    * BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
+    BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
    
     BRA     DO_NOP
     RTS * Return to I/O module (temporary; will go to EA module eventually)
     
-    
-;; ~~~~~~~~BRANCHES FOR NARROWING OPCODE SELECTION~~~~~~~~
+* ----------------------BEGIN NARROWING THE LEFT BRANCH OF THE OPCODE SELECTIONS ----------
 OXXX_BRA
     BTST.L  #14,D5      * Test the second bit 
     BEQ     OOXX_BRA    * Branch to opcodes starting with 00
@@ -55,16 +54,12 @@ OOIX_BRA
     * BTST.L  #12,D5              * Test the second bit 
     * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
     BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
-
-
-OOOO_BRA                    * tests for ADDI or SUBI
-    MOVE.W  #ADDI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
-    AND.W   D5,D2           * AND with current opcode data and store into D2
-    CMP.W   #$0600,D2       * Result of mask should be 0060 if the code is ADDi
+OOOO_BRA                        * tests for ADDI or SUBI
+    MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
+    AND.W   D5,D2               * AND with current opcode data and store into D2
+    CMP.W   #$0600,D2           * Result of mask should be 0060 if the code is ADDi
     BEQ     DO_ADDI     
-    MOVE.W  #SUBI_MASK,D2   * If it wasn't ADDI operation, check for SUBI
-    AND.W   D5,D2
-    CMP.W   #$0400,D2
+    CMP.W   #$0400,D2           * SUBI and ADDI  have the same bitmask.
     BEQ     DO_SUBI
     BRA     PRINT_INVALID_MSG
 OIOX_BRA
@@ -81,49 +76,71 @@ OIOO_BRA
     MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
     AND.W   D5,D2        * AND with the current opcode data
     CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
-    BEQ     DO_JSR       * 
-    BRA     PRINT_INVALID_MSG
+    BEQ     DO_JSR       *
+
+    MOVE.W  #CLR_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0200,D2              * IS IT CLR?
+    BEQ     DO_CLR
+
+    MOVE.W  #LEA_MASK,D2
+    AND     D5,D2
+    CMP.W   #$01C0,D2              *EQUAL TO LEA?
+    BEQ.W   DO_LEA
+    BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
 OIIO_BRA
     BRA     PRINT_COME_BACK_MSG   * Need halp 
+
+*------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
+IXXX_BRA
+    BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch 
 
 ;; Typical structure for these chunks:
 *
 DO_ADDI
     LEA     S_ADDI,A3
-    MOVE.B  #1,D7
+    MOVE.B  #8,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_SUBI
     LEA     S_SUBI,A3
-    MOVE.B  #1,D7
+    MOVE.B  #11,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_ADDQ
     *Check for full opcode for 11 and onwards. if invalid, print the message
     LEA     S_ADDQ,A3
-    MOVE.B  #1,D7
+    MOVE.B  #9,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
-
+DO_CLR
+    LEA     S_CLR,A3
+    MOVE.B  #16,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_LEA
+    LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
+    MOVE.B  #15,D7       * Store key for op code for EA module
+    ** Eventually, EA Module will be called here
+    JSR     WRITE       * Jump to WRITE subroutine
+    RTS                 * Return to I/O module 
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
     MOVE.B  #1,D7       * Store key for op code for EA module
     ** Eventually, EA Module will be called here
     JSR     WRITE       * Jump to WRITE subroutine
     RTS                 * Return to I/O module 
-    
-
 DO_RTS
     LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
     MOVE.B  #28,D7      * Store key for op code for EA module
     ** Eventually, EA Module will be called here
     JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to the I/O module bra op_decode
-    
+    RTS                 * Return to the I/O module bra op_decode  
 DO_MOVE
     LEA     S_MOVE,A3
     MOVE.B  #2,D7
@@ -143,7 +160,12 @@ PRINT_INVALID_MSG
     ** Eventually, NOCK will be called here
     JSR     WRITE
     RTS
-
+PRINT_OIOO_ERROR
+    LEA     BAD_OIOO,A3
+    MOVE.B  #0,D7
+    ** Eventually, NOCK will be called here
+    JSR     WRITE
+    RTS
 PRINT_COME_BACK_MSG
     LEA     COMEBK,A3
     MOVE.B  #0,D7
@@ -171,24 +193,27 @@ CODE_RTS    EQU     $4E75
 A4_PREV     SET     $2000
 
 *** Strings for opcodes (write these to memory)
-S_NOP   DC.B    'NOP',0
-S_RTS   DC.B    'RTS',0
-S_MOVE  DC.B    'MOVE',0
-S_JSR   DC.B    'JSR',0
-S_ADDQ  DC.B    'ADDQ',0
-S_ADDI  DC.B    'ADDI',0
-S_SUBI  DC.B    'SUBI',0
-INVALID DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
-COMEBK  DC.B    'Come back to me pls dont forget me',0 
-
+S_NOP       DC.B    'NOP',0
+S_RTS       DC.B    'RTS',0
+S_MOVE      DC.B    'MOVE',0
+S_JSR       DC.B    'JSR',0
+S_ADDQ      DC.B    'ADDQ',0
+S_ADDI      DC.B    'ADDI',0
+S_SUBI      DC.B    'SUBI',0
+S_CLR       DC.B    'CLR',0
+S_LEA       DC.B    'LEA',0    
+INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
+COMEBK      DC.B    'Come back to me pls dont forget me',0 
+BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 
 *** Mask constants 
-JSR_MASK    EQU     %0000111010000000
-ADDI_MASK   EQU     %0000011000000000
-SUBI_MASK   EQU     %0000010000000000
-BYTE_MASK   EQU     %0000000000000000
-WORD_MASK   EQU     %0000000001000000
-LONG_MASK   EQU     %0000000010000000         
+JSR_MASK        EQU     %0000111111000000
+ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
+BYTE_MASK       EQU     %0000000000000000
+WORD_MASK       EQU     %0000000001000000
+LONG_MASK       EQU     %0000000010000000  
+CLR_MASK        EQU     %0000111100000000
+LEA_MASK        EQU     %0000000111000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 

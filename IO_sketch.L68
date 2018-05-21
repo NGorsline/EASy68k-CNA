@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/20/2018 3:54:42 PM
+Created On: 5/20/2018 5:58:39 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :  Disassembler I/O 
@@ -126,286 +126,306 @@ Created On: 5/20/2018 3:54:42 PM
 000010E2  4E4F                     122      TRAP    #15
 000010E4  60EC                     123      BRA     MAIN_LOOP
 000010E6                           124      
-000010E6                           125      
-000010E6                           126      
-000010E6                           127    
-000010E6                           128  ;; print nops
-000010E6                           129  PRINT_NOPS_TEST
-000010E6  103C 000F                130      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-000010EA  143C 0010                131      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-000010EE                           132      * PRINT THE CURRENT ADDRESS
-000010EE  220E                     133      MOVE.L  A6,D1
-000010F0  4E4F                     134      TRAP    #15
-000010F2  4281                     135      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-000010F4                           136      
-000010F4  43F9 0000115B            137      LEA     COLON_SPACE,A1
-000010FA  103C 000E                138      MOVE.B  #14,D0
-000010FE  4E4F                     139      TRAP    #15
-00001100                           140      
-00001100  103C 0001                141      MOVE.B  #1,D0   * Print string, no CRLF
+000010E6                           125  ;; print nops
+000010E6                           126  PRINT_NOPS_TEST
+000010E6  103C 000F                127      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+000010EA  143C 0010                128      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+000010EE                           129      * PRINT THE CURRENT ADDRESS
+000010EE  220E                     130      MOVE.L  A6,D1
+000010F0  4E4F                     131      TRAP    #15
+000010F2  4281                     132      CLR.L   D1          * clear D1 so that it holds just the data on the next print
+000010F4                           133      
+000010F4  43F9 0000115B            134      LEA     COLON_SPACE,A1
+000010FA  103C 000E                135      MOVE.B  #14,D0
+000010FE  4E4F                     136      TRAP    #15
+00001100                           137      
+00001100  103C 0001                138      MOVE.B  #1,D0   * Print string, no CRLF
+00001104                           139      
+00001104                           140      
+00001104                           141      
 00001104                           142      
-00001104                           143      
-00001104                           144      
-00001104                           145      
-00001104                           146  
-00001104                           147  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
-00001104                           148  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
-00001104  43F9 00001203            149      LEA     PRINT_IT_STRING,A1
-0000110A  103C 000D                150      MOVE.B  #13,D0
-0000110E  4E4F                     151      TRAP    #15
-00001110                           152      
-00001110                           153  PRINT_IT_LOOP
-00001110  103C 000F                154      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-00001114  143C 0010                155      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-00001118                           156      * PRINT THE CURRENT ADDRESS
-00001118  220E                     157      MOVE.L  A6,D1
-0000111A  4E4F                     158      TRAP    #15
-0000111C  4281                     159      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-0000111E                           160      
-0000111E  43F9 0000115B            161      LEA     COLON_SPACE,A1
-00001124  103C 000E                162      MOVE.B  #14,D0
-00001128  4E4F                     163      TRAP    #15
-0000112A                           164      
-0000112A  221E                     165      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
-0000112C  103C 000F                166      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
-00001130  4E4F                     167      TRAP    #15
-00001132                           168      
-00001132                           169      * Print a new line
-00001132  43F9 00001152            170      LEA     NEW_LINE,A1
-00001138  103C 000D                171      MOVE.B  #13,D0
-0000113C  4E4F                     172      TRAP    #15
-0000113E                           173      
-0000113E                           174      * Check if end address has been reached
-0000113E  BDCD                     175      CMP.L   A5,A6
-00001140  6FCE                     176      BLE     PRINT_IT_LOOP
-00001142                           177  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
-00001142                           178  
-00001142                           179  
-00001142                           180      
-00001142                           181      
-00001142  43F9 00001155            182      LEA     DONE_MSG,A1
-00001148  103C 000D                183      MOVE.B  #13,D0
-0000114C  4E4F                     184      TRAP    #15
-0000114E                           185  
-0000114E  FFFF FFFF                186      SIMHALT             ; halt simulator
-00001152                           187  
-00001152                           188  * Put variables and constants here
-00001152                           189  
-00001152                           190  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
-00001152                           191  *** real hex value (depending on whether it's a digit or a character).
-00001152  =00000030                192  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
-00001152  =00000039                193  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
-00001152  =00000041                194  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
-00001152  =00000046                195  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
-00001152                           196  
-00001152                           197  *** Message strings
-00001152                           198      * Temporary; used for debugging and testing
-00001152= 00 0D 0A                 199  NEW_LINE        DC.B    '',0,CR,LF
-00001155                           200      * Temporary; used for debugging and testing
-00001155= 44 6F 6E 65 2E 00        201  DONE_MSG        DC.B    'Done.',0
-0000115B                           202      * Temporary; used for debugging and testing
-0000115B= 3A 20 00                 203  COLON_SPACE     DC.B    ': ',0
-0000115E= 49 6E 76 61 6C 69 ...    204  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
-0000117B= 49 6E 76 61 6C 69 ...    205  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-000011BE= 45 6E 74 65 72 20 ...    206  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
-000011E1= 45 6E 74 65 72 20 ...    207  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
-00001203= 49 20 61 6D 20 61 ...    208  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
-00001230  =0000000A                209  LF              EQU      $0A
-00001230  =0000000D                210  CR              EQU      $0D
-00001230                           211  
-00001230= 00000001                 212  buffer  DC.L    1
-00001234                           213  
-00001234  =00008000                214  DISM_CODE     EQU     $8000 * Where to write disassembled code
-00001234                           215      
-00001234  4E71                     216      NOP
-00001236                           217  
-00001236                           218  END_NOW
-00001236  43F8 1155                219      LEA     DONE_MSG,A1
-0000123A  103C 0001                220      MOVE.B  #1,D0
-0000123E  4E4F                     221      TRAP    #15
-00001240  43F8 1230                222      LEA     buffer,A1
-00001244                           223      
-00001244                           224      INCLUDE 'OP.X68'
-00001244                           225  
-00001244                           226  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
-00001244                           227  
-00001244                           228  OP_DECODE
-00001244  3A1E                     229      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
-00001246                           230      * NOTE: A6 now points at either the next opcode or imm. data for EA part
-00001246                           231      
-00001246                           232      * is it NOP?
-00001246  BA7C 4E71                233      CMP.W   #CODE_NOP,D5
-0000124A  6700 00D4                234      BEQ     DO_NOP      * After execution of this branch, will return to I/O
-0000124E                           235      
-0000124E                           236      * is it RTS?
-0000124E  BA7C 4E75                237      CMP.W   #CODE_RTS,D5
-00001252  6700 00DE                238      BEQ     DO_RTS      * After execution of this branch, will return to I/O
-00001256                           239      
-00001256                           240      ** Not NOP or RTS, check bit-by-bit to narrow down
-00001256                           241      
-00001256  0805 000F                242      BTST.L  #15,D5       * Test the most significant bit of the command
-0000125A  6700 0008                243      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
-0000125E                           244      * BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
-0000125E                           245     
-0000125E  6000 00C0                246      BRA     DO_NOP
-00001262  4E75                     247      RTS * Return to I/O module (temporary; will go to EA module eventually)
-00001264                           248      
-00001264                           249      
-00001264                           250  ;; ~~~~~~~~BRANCHES FOR NARROWING OPCODE SELECTION~~~~~~~~
-00001264                           251  OXXX_BRA
-00001264  0805 000E                252      BTST.L  #14,D5      * Test the second bit 
-00001268  6700 0006                253      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
-0000126C  6000 0012                254      BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
-00001270                           255  
-00001270                           256  OOXX_BRA
-00001270  0805 000D                257      BTST.L  #13,D5          * Test the second bit 
-00001274  6700 0016                258      BEQ     OOOX_BRA        * Branch to opcodes starting with 000
-00001278  6000 001E                259      BRA     OOIX_BRA        * Might be MOVE, MOVEA
-0000127C  6000 00EA                260      BRA     PRINT_INVALID_MSG
-00001280                           261  OIXX_BRA
-00001280  0805 000D                262      BTST.L  #13,D5
-00001284  6700 0036                263      BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
-00001288  6000 003E                264      BRA     OIIX_BRA    * BCC, OR MOVEQ
-0000128C                           265  OOOX_BRA
-0000128C  0805 000C                266      BTST.L  #12,D5              * Test the second bit 
-00001290  6700 000A                267      BEQ     OOOO_BRA            * Decision for SUBI or ADDI
-00001294  6000 00E4                268      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
-00001298                           269  OOIX_BRA
-00001298                           270      * BTST.L  #12,D5              * Test the second bit 
-00001298                           271      * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
-00001298  6000 00E0                272      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
-0000129C                           273  
-0000129C                           274  
-0000129C                           275  OOOO_BRA                    * tests for ADDI or SUBI
-0000129C  343C 0600                276      MOVE.W  #ADDI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
-000012A0  C445                     277      AND.W   D5,D2           * AND with current opcode data and store into D2
-000012A2  B47C 0600                278      CMP.W   #$0600,D2       * Result of mask should be 0060 if the code is ADDi
-000012A6  6700 0042                279      BEQ     DO_ADDI     
-000012AA  343C 0400                280      MOVE.W  #SUBI_MASK,D2   * If it wasn't ADDI operation, check for SUBI
-000012AE  C445                     281      AND.W   D5,D2
-000012B0  B47C 0400                282      CMP.W   #$0400,D2
-000012B4  6700 0046                283      BEQ     DO_SUBI
-000012B8  6000 00AE                284      BRA     PRINT_INVALID_MSG
-000012BC                           285  OIOX_BRA
-000012BC  0805 000C                286      BTST.L  #12,D5
-000012C0  6700 0012                287      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
-000012C4  6000 0048                288      BRA     DO_ADDQ    * ADDQ 
-000012C8                           289  OIIX_BRA
-000012C8                           290      *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
-000012C8  0805 000C                291      BTST.L  #12,D5
-000012CC  6700 0018                292      BEQ     OIIO_BRA            * BCC and MOVEQ happens here
-000012D0  6000 0096                293      BRA     PRINT_INVALID_MSG   * There is no 0111
-000012D4                           294  OIOO_BRA
-000012D4                           295      ** Test for JSR
-000012D4  343C 0E80                296      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
-000012D8  C445                     297      AND.W   D5,D2        * AND with the current opcode data
-000012DA  B47C 0E80                298      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
-000012DE  6700 0076                299      BEQ     DO_JSR       * 
-000012E2  6000 0084                300      BRA     PRINT_INVALID_MSG
-000012E6                           301  
-000012E6                           302  OIIO_BRA
-000012E6  6000 0092                303      BRA     PRINT_COME_BACK_MSG   * Need halp 
-000012EA                           304  
-000012EA                           305  ;; Typical structure for these chunks:
-000012EA                           306  DO_ADDI
-000012EA  47F9 000013B0            307      LEA     S_ADDI,A3
-000012F0  1E3C 0001                308      MOVE.B  #1,D7
-000012F4                           309      ** Eventually, EA Module will be called here
-000012F4  4EB9 0000138C            310      JSR     WRITE
-000012FA  4E75                     311      RTS
-000012FC                           312  DO_SUBI
-000012FC  47F9 000013B5            313      LEA     S_SUBI,A3
-00001302  1E3C 0001                314      MOVE.B  #1,D7
-00001306                           315      ** Eventually, EA Module will be called here
-00001306  4EB9 0000138C            316      JSR     WRITE
-0000130C  4E75                     317      RTS
-0000130E                           318  DO_ADDQ
-0000130E                           319      *Check for full opcode for 11 and onwards. if invalid, print the message
-0000130E  47F9 000013AB            320      LEA     S_ADDQ,A3
-00001314  1E3C 0001                321      MOVE.B  #1,D7
-00001318                           322      ** Eventually, EA Module will be called here
-00001318  4EB9 0000138C            323      JSR     WRITE
-0000131E  4E75                     324      RTS
-00001320                           325  
-00001320                           326  DO_NOP
-00001320  47F9 0000139A            327      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-00001326  1E3C 0001                328      MOVE.B  #1,D7       * Store key for op code for EA module
-0000132A                           329      ** Eventually, EA Module will be called here
-0000132A  4EB9 0000138C            330      JSR     WRITE       * Jump to WRITE subroutine
-00001330  4E75                     331      RTS                 * Return to I/O module 
-00001332                           332      
-00001332                           333  
-00001332                           334  DO_RTS
-00001332  47F9 0000139E            335      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-00001338  1E3C 001C                336      MOVE.B  #28,D7      * Store key for op code for EA module
-0000133C                           337      ** Eventually, EA Module will be called here
-0000133C  4EB9 0000138C            338      JSR     WRITE       * Jump to WRITE subroutine
-00001342  4E75                     339      RTS                 * Return to the I/O module bra op_decode
-00001344                           340      
-00001344                           341  DO_MOVE
-00001344  47F9 000013A2            342      LEA     S_MOVE,A3
-0000134A  1E3C 0002                343      MOVE.B  #2,D7
-0000134E                           344      ** Eventually, EA Module will be called here
-0000134E  4EB9 0000138C            345      JSR     WRITE
-00001354  4E75                     346      RTS
-00001356                           347      
-00001356                           348  DO_JSR
-00001356  47F9 000013A7            349      LEA     S_JSR,A3
-0000135C  1E3C 001B                350      MOVE.B  #27,D7
-00001360                           351      ** Eventually, NOCK will be called here
-00001360  4EB9 0000138C            352      JSR     WRITE
-00001366  4E75                     353      RTS
-00001368                           354  PRINT_INVALID_MSG
-00001368  47F9 000013BA            355      LEA     INVALID,A3
-0000136E  1E3C 0000                356      MOVE.B  #0,D7
-00001372                           357      ** Eventually, NOCK will be called here
-00001372  4EB9 0000138C            358      JSR     WRITE
-00001378  4E75                     359      RTS
-0000137A                           360  
-0000137A                           361  PRINT_COME_BACK_MSG
-0000137A  47F9 000013E6            362      LEA     COMEBK,A3
-00001380  1E3C 0000                363      MOVE.B  #0,D7
-00001384                           364      ** Eventually, NOCK will be called here
-00001384  4EB9 0000138C            365      JSR     WRITE
-0000138A  4E75                     366      RTS
-0000138C                           367  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-0000138C  224C                     368      MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
-0000138E                           369  WRITE_LOOP
-0000138E  18DB                     370      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
-00001390  0C13 0000                371      CMP.B   #0,(A3)         * Are we at the null terminator?
-00001394  66F8                     372      BNE     WRITE_LOOP      * If not, keep going
-00001396  18DB                     373      MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
-00001398  4E75                     374      RTS                     * Executes once null terminator was reached
-0000139A                           375      
-0000139A                           376  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
-0000139A                           377  
-0000139A  =00004E71                378  CODE_NOP    EQU     $4E71
-0000139A  =00004E75                379  CODE_RTS    EQU     $4E75
-0000139A                           380  
-0000139A  =00002000                381  A4_PREV     SET     $2000
-0000139A                           382  
-0000139A= 4E 4F 50 00              383  S_NOP   DC.B    'NOP',0
-0000139E= 52 54 53 00              384  S_RTS   DC.B    'RTS',0
-000013A2= 4D 4F 56 45 00           385  S_MOVE  DC.B    'MOVE',0
-000013A7= 4A 53 52 00              386  S_JSR   DC.B    'JSR',0
-000013AB= 41 44 44 51 00           387  S_ADDQ  DC.B    'ADDQ',0
-000013B0= 41 44 44 49 00           388  S_ADDI  DC.B    'ADDI',0
-000013B5= 53 55 42 49 00           389  S_SUBI  DC.B    'SUBI',0
-000013BA= 49 4E 56 41 4C 49 ...    390  INVALID DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
-000013E6= 43 6F 6D 65 20 62 ...    391  COMEBK  DC.B    'Come back to me pls dont forget me',0 
-00001409                           392  
-00001409                           393  
-00001409  =00000E80                394  JSR_MASK    EQU     %0000111010000000
-00001409  =00000600                395  ADDI_MASK   EQU     %0000011000000000
-00001409  =00000400                396  SUBI_MASK   EQU     %0000010000000000
-00001409  =00000000                397  BYTE_MASK   EQU     %0000000000000000
-00001409  =00000040                398  WORD_MASK   EQU     %0000000001000000
-00001409  =00000080                399  LONG_MASK   EQU     %0000000010000000         
-00001409                           400  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-00001409                           401  
-00001409                           402  
-00001409                           403  -------------------- end include --------------------
-00001409                           404      END    START        ; last line of source
+00001104                           143  
+00001104                           144  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
+00001104                           145  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
+00001104  43F9 00001203            146      LEA     PRINT_IT_STRING,A1
+0000110A  103C 000D                147      MOVE.B  #13,D0
+0000110E  4E4F                     148      TRAP    #15
+00001110                           149      
+00001110                           150  PRINT_IT_LOOP
+00001110  103C 000F                151      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
+00001114  143C 0010                152      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
+00001118                           153      * PRINT THE CURRENT ADDRESS
+00001118  220E                     154      MOVE.L  A6,D1
+0000111A  4E4F                     155      TRAP    #15
+0000111C  4281                     156      CLR.L   D1          * clear D1 so that it holds just the data on the next print
+0000111E                           157      
+0000111E  43F9 0000115B            158      LEA     COLON_SPACE,A1
+00001124  103C 000E                159      MOVE.B  #14,D0
+00001128  4E4F                     160      TRAP    #15
+0000112A                           161      
+0000112A  221E                     162      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
+0000112C  103C 000F                163      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
+00001130  4E4F                     164      TRAP    #15
+00001132                           165      
+00001132                           166      * Print a new line
+00001132  43F9 00001152            167      LEA     NEW_LINE,A1
+00001138  103C 000D                168      MOVE.B  #13,D0
+0000113C  4E4F                     169      TRAP    #15
+0000113E                           170      
+0000113E                           171      * Check if end address has been reached
+0000113E  BDCD                     172      CMP.L   A5,A6
+00001140  6FCE                     173      BLE     PRINT_IT_LOOP
+00001142                           174  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+00001142                           175  
+00001142                           176  
+00001142                           177      
+00001142                           178      
+00001142  43F9 00001155            179      LEA     DONE_MSG,A1
+00001148  103C 000D                180      MOVE.B  #13,D0
+0000114C  4E4F                     181      TRAP    #15
+0000114E                           182  
+0000114E  FFFF FFFF                183      SIMHALT             ; halt simulator
+00001152                           184  
+00001152                           185  * Put variables and constants here
+00001152                           186  
+00001152                           187  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
+00001152                           188  *** real hex value (depending on whether it's a digit or a character).
+00001152  =00000030                189  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
+00001152  =00000039                190  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
+00001152  =00000041                191  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
+00001152  =00000046                192  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
+00001152                           193  
+00001152                           194  *** Message strings
+00001152                           195      * Temporary; used for debugging and testing
+00001152= 00 0D 0A                 196  NEW_LINE        DC.B    '',0,CR,LF
+00001155                           197      * Temporary; used for debugging and testing
+00001155= 44 6F 6E 65 2E 00        198  DONE_MSG        DC.B    'Done.',0
+0000115B                           199      * Temporary; used for debugging and testing
+0000115B= 3A 20 00                 200  COLON_SPACE     DC.B    ': ',0
+0000115E= 49 6E 76 61 6C 69 ...    201  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
+0000117B= 49 6E 76 61 6C 69 ...    202  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
+000011BE= 45 6E 74 65 72 20 ...    203  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+000011E1= 45 6E 74 65 72 20 ...    204  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
+00001203= 49 20 61 6D 20 61 ...    205  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+00001230  =0000000A                206  LF              EQU      $0A
+00001230  =0000000D                207  CR              EQU      $0D
+00001230                           208  
+00001230= 00000001                 209  buffer  DC.L    1
+00001234                           210  
+00001234  =00008000                211  DISM_CODE     EQU     $8000 * Where to write disassembled code
+00001234                           212      
+00001234  4E71                     213      NOP
+00001236                           214  
+00001236                           215  END_NOW
+00001236  43F8 1155                216      LEA     DONE_MSG,A1
+0000123A  103C 0001                217      MOVE.B  #1,D0
+0000123E  4E4F                     218      TRAP    #15
+00001240  43F8 1230                219      LEA     buffer,A1
+00001244                           220      
+00001244                           221      INCLUDE 'OP.X68'
+00001244                           222  
+00001244                           223  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
+00001244                           224  
+00001244                           225  OP_DECODE
+00001244  3A1E                     226      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+00001246                           227      * NOTE: A6 now points at either the next opcode or imm. data for EA part
+00001246                           228      
+00001246                           229      * is it NOP?
+00001246  BA7C 4E71                230      CMP.W   #CODE_NOP,D5
+0000124A  6700 0116                231      BEQ     DO_NOP      * After execution of this branch, will return to I/O
+0000124E                           232      
+0000124E                           233      * is it RTS?
+0000124E  BA7C 4E75                234      CMP.W   #CODE_RTS,D5
+00001252  6700 0120                235      BEQ     DO_RTS      * After execution of this branch, will return to I/O
+00001256                           236      
+00001256                           237      ** Not NOP or RTS, check bit-by-bit to narrow down
+00001256                           238      
+00001256  0805 000F                239      BTST.L  #15,D5       * Test the most significant bit of the command
+0000125A  6700 000C                240      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
+0000125E  6000 00A4                241      BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
+00001262                           242     
+00001262  6000 00FE                243      BRA     DO_NOP
+00001266  4E75                     244      RTS * Return to I/O module (temporary; will go to EA module eventually)
+00001268                           245      
+00001268                           246  OXXX_BRA
+00001268  0805 000E                247      BTST.L  #14,D5      * Test the second bit 
+0000126C  6700 0006                248      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
+00001270  6000 0012                249      BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
+00001274                           250  
+00001274                           251  OOXX_BRA
+00001274  0805 000D                252      BTST.L  #13,D5          * Test the second bit 
+00001278  6700 0016                253      BEQ     OOOX_BRA        * Branch to opcodes starting with 000
+0000127C  6000 001E                254      BRA     OOIX_BRA        * Might be MOVE, MOVEA
+00001280  6000 0128                255      BRA     PRINT_INVALID_MSG
+00001284                           256  OIXX_BRA
+00001284  0805 000D                257      BTST.L  #13,D5
+00001288  6700 0030                258      BEQ     OIOX_BRA    * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
+0000128C  6000 0038                259      BRA     OIIX_BRA    * BCC, OR MOVEQ
+00001290                           260  OOOX_BRA
+00001290  0805 000C                261      BTST.L  #12,D5              * Test the second bit 
+00001294  6700 000A                262      BEQ     OOOO_BRA            * Decision for SUBI or ADDI
+00001298  6000 0134                263      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+0000129C                           264  OOIX_BRA
+0000129C                           265      * BTST.L  #12,D5              * Test the second bit 
+0000129C                           266      * BEQ     OOOO_BRA            * Decision for MOVE OR MOVEA
+0000129C  6000 0130                267      BRA     PRINT_COME_BACK_MSG * might be MOVE, MOVEA, 
+000012A0                           268  OOOO_BRA                        * tests for ADDI or SUBI
+000012A0  343C 0F00                269      MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
+000012A4  C445                     270      AND.W   D5,D2               * AND with current opcode data and store into D2
+000012A6  B47C 0600                271      CMP.W   #$0600,D2           * Result of mask should be 0060 if the code is ADDi
+000012AA  6700 005C                272      BEQ     DO_ADDI     
+000012AE  B47C 0400                273      CMP.W   #$0400,D2           * SUBI and ADDI  have the same bitmask.
+000012B2  6700 0066                274      BEQ     DO_SUBI
+000012B6  6000 00F2                275      BRA     PRINT_INVALID_MSG
+000012BA                           276  OIOX_BRA
+000012BA  0805 000C                277      BTST.L  #12,D5
+000012BE  6700 0012                278      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
+000012C2  6000 0068                279      BRA     DO_ADDQ    * ADDQ 
+000012C6                           280  OIIX_BRA
+000012C6                           281      *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
+000012C6  0805 000C                282      BTST.L  #12,D5
+000012CA  6700 0034                283      BEQ     OIIO_BRA            * BCC and MOVEQ happens here
+000012CE  6000 00DA                284      BRA     PRINT_INVALID_MSG   * There is no 0111
+000012D2                           285  OIOO_BRA
+000012D2                           286      ** Test for JSR
+000012D2  343C 0FC0                287      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
+000012D6  C445                     288      AND.W   D5,D2        * AND with the current opcode data
+000012D8  B47C 0E80                289      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
+000012DC  6700 00BA                290      BEQ     DO_JSR       *
+000012E0                           291  
+000012E0  343C 0F00                292      MOVE.W  #CLR_MASK,D2
+000012E4  C445                     293      AND.W   D5,D2
+000012E6  B47C 0200                294      CMP.W   #$0200,D2              * IS IT CLR?
+000012EA  6700 0052                295      BEQ     DO_CLR
+000012EE                           296  
+000012EE  343C 01C0                297      MOVE.W  #LEA_MASK,D2
+000012F2  C445                     298      AND     D5,D2
+000012F4  B47C 01C0                299      CMP.W   #$01C0,D2              *EQUAL TO LEA?
+000012F8  6700 0056                300      BEQ.W   DO_LEA
+000012FC  6000 00BE                301      BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
+00001300                           302  
+00001300                           303  OIIO_BRA
+00001300  6000 00CC                304      BRA     PRINT_COME_BACK_MSG   * Need halp 
+00001304                           305  
+00001304                           306  IXXX_BRA
+00001304  6000 00C8                307      BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch 
+00001308                           308  
+00001308                           309  ;; Typical structure for these chunks:
+00001308                           310  DO_ADDI
+00001308  47F9 00001404            311      LEA     S_ADDI,A3
+0000130E  1E3C 0008                312      MOVE.B  #8,D7
+00001312                           313      ** Eventually, EA Module will be called here
+00001312  4EB9 000013E0            314      JSR     WRITE
+00001318  4E75                     315      RTS
+0000131A                           316  DO_SUBI
+0000131A  47F9 00001409            317      LEA     S_SUBI,A3
+00001320  1E3C 000B                318      MOVE.B  #11,D7
+00001324                           319      ** Eventually, EA Module will be called here
+00001324  4EB9 000013E0            320      JSR     WRITE
+0000132A  4E75                     321      RTS
+0000132C                           322  DO_ADDQ
+0000132C                           323      *Check for full opcode for 11 and onwards. if invalid, print the message
+0000132C  47F9 000013FF            324      LEA     S_ADDQ,A3
+00001332  1E3C 0009                325      MOVE.B  #9,D7
+00001336                           326      ** Eventually, EA Module will be called here
+00001336  4EB9 000013E0            327      JSR     WRITE
+0000133C  4E75                     328      RTS
+0000133E                           329  DO_CLR
+0000133E  47F9 0000140E            330      LEA     S_CLR,A3
+00001344  1E3C 0010                331      MOVE.B  #16,D7
+00001348                           332      ** Eventually, EA Module will be called here
+00001348  4EB9 000013E0            333      JSR     WRITE
+0000134E  4E75                     334      RTS
+00001350                           335  DO_LEA
+00001350  47F9 00001412            336      LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
+00001356  1E3C 000F                337      MOVE.B  #15,D7       * Store key for op code for EA module
+0000135A                           338      ** Eventually, EA Module will be called here
+0000135A  4EB9 000013E0            339      JSR     WRITE       * Jump to WRITE subroutine
+00001360  4E75                     340      RTS                 * Return to I/O module 
+00001362                           341  DO_NOP
+00001362  47F9 000013EE            342      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+00001368  1E3C 0001                343      MOVE.B  #1,D7       * Store key for op code for EA module
+0000136C                           344      ** Eventually, EA Module will be called here
+0000136C  4EB9 000013E0            345      JSR     WRITE       * Jump to WRITE subroutine
+00001372  4E75                     346      RTS                 * Return to I/O module 
+00001374                           347  DO_RTS
+00001374  47F9 000013F2            348      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+0000137A  1E3C 001C                349      MOVE.B  #28,D7      * Store key for op code for EA module
+0000137E                           350      ** Eventually, EA Module will be called here
+0000137E  4EB9 000013E0            351      JSR     WRITE       * Jump to WRITE subroutine
+00001384  4E75                     352      RTS                 * Return to the I/O module bra op_decode  
+00001386                           353  DO_MOVE
+00001386  47F9 000013F6            354      LEA     S_MOVE,A3
+0000138C  1E3C 0002                355      MOVE.B  #2,D7
+00001390                           356      ** Eventually, EA Module will be called here
+00001390  4EB9 000013E0            357      JSR     WRITE
+00001396  4E75                     358      RTS
+00001398                           359      
+00001398                           360  DO_JSR
+00001398  47F9 000013FB            361      LEA     S_JSR,A3
+0000139E  1E3C 001B                362      MOVE.B  #27,D7
+000013A2                           363      ** Eventually, NOCK will be called here
+000013A2  4EB9 000013E0            364      JSR     WRITE
+000013A8  4E75                     365      RTS
+000013AA                           366  PRINT_INVALID_MSG
+000013AA  47F9 00001416            367      LEA     INVALID,A3
+000013B0  1E3C 0000                368      MOVE.B  #0,D7
+000013B4                           369      ** Eventually, NOCK will be called here
+000013B4  4EB9 000013E0            370      JSR     WRITE
+000013BA  4E75                     371      RTS
+000013BC                           372  PRINT_OIOO_ERROR
+000013BC  47F9 00001465            373      LEA     BAD_OIOO,A3
+000013C2  1E3C 0000                374      MOVE.B  #0,D7
+000013C6                           375      ** Eventually, NOCK will be called here
+000013C6  4EB9 000013E0            376      JSR     WRITE
+000013CC  4E75                     377      RTS
+000013CE                           378  PRINT_COME_BACK_MSG
+000013CE  47F9 00001442            379      LEA     COMEBK,A3
+000013D4  1E3C 0000                380      MOVE.B  #0,D7
+000013D8                           381      ** Eventually, NOCK will be called here
+000013D8  4EB9 000013E0            382      JSR     WRITE
+000013DE  4E75                     383      RTS
+000013E0                           384  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+000013E0  224C                     385      MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
+000013E2                           386  WRITE_LOOP
+000013E2  18DB                     387      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
+000013E4  0C13 0000                388      CMP.B   #0,(A3)         * Are we at the null terminator?
+000013E8  66F8                     389      BNE     WRITE_LOOP      * If not, keep going
+000013EA  18DB                     390      MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
+000013EC  4E75                     391      RTS                     * Executes once null terminator was reached
+000013EE                           392      
+000013EE                           393  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+000013EE                           394  
+000013EE  =00004E71                395  CODE_NOP    EQU     $4E71
+000013EE  =00004E75                396  CODE_RTS    EQU     $4E75
+000013EE                           397  
+000013EE  =00002000                398  A4_PREV     SET     $2000
+000013EE                           399  
+000013EE= 4E 4F 50 00              400  S_NOP       DC.B    'NOP',0
+000013F2= 52 54 53 00              401  S_RTS       DC.B    'RTS',0
+000013F6= 4D 4F 56 45 00           402  S_MOVE      DC.B    'MOVE',0
+000013FB= 4A 53 52 00              403  S_JSR       DC.B    'JSR',0
+000013FF= 41 44 44 51 00           404  S_ADDQ      DC.B    'ADDQ',0
+00001404= 41 44 44 49 00           405  S_ADDI      DC.B    'ADDI',0
+00001409= 53 55 42 49 00           406  S_SUBI      DC.B    'SUBI',0
+0000140E= 43 4C 52 00              407  S_CLR       DC.B    'CLR',0
+00001412= 4C 45 41 00              408  S_LEA       DC.B    'LEA',0    
+00001416= 49 4E 56 41 4C 49 ...    409  INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
+00001442= 43 6F 6D 65 20 62 ...    410  COMEBK      DC.B    'Come back to me pls dont forget me',0 
+00001465= 42 61 64 20 4F 49 ...    411  BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
+00001495                           412  
+00001495  =00000FC0                413  JSR_MASK        EQU     %0000111111000000
+00001495  =00000F00                414  ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
+00001495  =00000000                415  BYTE_MASK       EQU     %0000000000000000
+00001495  =00000040                416  WORD_MASK       EQU     %0000000001000000
+00001495  =00000080                417  LONG_MASK       EQU     %0000000010000000  
+00001495  =00000F00                418  CLR_MASK        EQU     %0000111100000000
+00001495  =000001C0                419  LEA_MASK        EQU     %0000000111000000
+00001495                           420  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+00001495                           421  
+00001495                           422  
+00001495                           423  -------------------- end include --------------------
+00001495                           424      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -415,75 +435,83 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 A4_PREV             2000
-ADDI_MASK           600
 ADDR_PRMPT_END      11E1
 ADDR_PRMPT_STRT     11BE
+ADDSUBI_MASK        F00
 ASC_CHAR_MAX        46
 ASC_CHAR_MIN        41
 ASC_NUM_MAX         39
 ASC_NUM_MIN         30
 ASC_TO_CHAR         109C
 ASC_TO_NUM          1092
+BAD_OIOO            1465
 BUFFER              1230
 BYTE_MASK           0
 CHECK_CHAR_MAX      1086
 CHECK_CHAR_MIN      107A
 CHECK_NUM_MAX       106C
 CHECK_NUM_MIN       1060
+CLR_MASK            F00
 CODE_NOP            4E71
 CODE_RTS            4E75
 COLON_SPACE         115B
-COMEBK              13E6
+COMEBK              1442
 CONVERSION_LOOP     105E
 CR                  D
 DISM_CODE           8000
 DONE_MSG            1155
-DO_ADDI             12EA
-DO_ADDQ             130E
-DO_JSR              1356
-DO_MOVE             1344
-DO_NOP              1320
-DO_RTS              1332
-DO_SUBI             12FC
+DO_ADDI             1308
+DO_ADDQ             132C
+DO_CLR              133E
+DO_JSR              1398
+DO_LEA              1350
+DO_MOVE             1386
+DO_NOP              1362
+DO_RTS              1374
+DO_SUBI             131A
 END_LTE_BEG         117B
 END_NOW             1236
 ERROR_END_LTE_BEG   10C2
 ERROR_INV_INP       10B2
-INVALID             13BA
+INVALID             1416
 INVALID_INPUT       115E
-JSR_MASK            E80
+IXXX_BRA            1304
+JSR_MASK            FC0
+LEA_MASK            1C0
 LF                  A
 LONG_MASK           80
 MAIN_LOOP           10D2
 NEW_LINE            1152
-OIIO_BRA            12E6
-OIIX_BRA            12C8
-OIOO_BRA            12D4
-OIOX_BRA            12BC
-OIXX_BRA            1280
-OOIX_BRA            1298
-OOOO_BRA            129C
-OOOX_BRA            128C
-OOXX_BRA            1270
+OIIO_BRA            1300
+OIIX_BRA            12C6
+OIOO_BRA            12D2
+OIOX_BRA            12BA
+OIXX_BRA            1284
+OOIX_BRA            129C
+OOOO_BRA            12A0
+OOOX_BRA            1290
+OOXX_BRA            1274
 OP_DECODE           1244
-OXXX_BRA            1264
-PRINT_COME_BACK_MSG  137A
-PRINT_INVALID_MSG   1368
+OXXX_BRA            1268
+PRINT_COME_BACK_MSG  13CE
+PRINT_INVALID_MSG   13AA
 PRINT_IT            1104
 PRINT_IT_LOOP       1110
 PRINT_IT_STRING     1203
 PRINT_LOOP          10DE
 PRINT_NOPS_TEST     10E6
+PRINT_OIOO_ERROR    13BC
 SHIFTS              10A6
 START               1000
-SUBI_MASK           400
-S_ADDI              13B0
-S_ADDQ              13AB
-S_JSR               13A7
-S_MOVE              13A2
-S_NOP               139A
-S_RTS               139E
-S_SUBI              13B5
+S_ADDI              1404
+S_ADDQ              13FF
+S_CLR               140E
+S_JSR               13FB
+S_LEA               1412
+S_MOVE              13F6
+S_NOP               13EE
+S_RTS               13F2
+S_SUBI              1409
 WORD_MASK           40
-WRITE               138C
-WRITE_LOOP          138E
+WRITE               13E0
+WRITE_LOOP          13E2
