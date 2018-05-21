@@ -31,6 +31,6 @@ D4-
 
 D5 - Word data @ A6 (to decode)
 
-D6- 
+D6 - Holds register for EA string writing. EA subroutines for various modes use this register to write the correct number.
 
 D7 - Opcode number for EA module (1 - 30, top-to-bottom according to our opcode chart)
