@@ -64,31 +64,31 @@ OOOO_BRA                        * tests for ADDI or SUBI
     BEQ     DO_SUBI
     BRA     PRINT_INVALID_MSG
 OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
-    MOVE.W  MOVE_MASK,D2
+    MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
     CMP.W   #$1000,D2           * is it a move byte?
     BEQ     DO_MOVE_B           
 
     BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
 OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
-    MOVE.W  MOVEA_MASK,D2
+    MOVE.W  #MOVEA_MASK,D2
     AND.W   D5,D2
     CMP.W   #$2040,D2           * is it a moveA word?
     BEQ     DO_MOVEA_W          
 
-    MOVE.W  MOVE_MASK,D2
+    MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
     CMP.W   #$2000,D2           * is it a move word?
     BEQ     DO_MOVE_W           
 
     BRA     PRINT_INVALID_MSG
 OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
-    MOVE.W  MOVEA_MASK,D2
+    MOVE.W  #MOVEA_MASK,D2
     AND.W   D5,D2
     CMP.W   #$3040,D2           * is it a moveA long?
     BEQ     DO_MOVEA_L          
 
-    MOVE.W  MOVE_MASK,D2
+    MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
     CMP.W   #$3000,D2           * is it a move long?
     BEQ     DO_MOVE_L           
@@ -303,7 +303,7 @@ S_BLE       DC.B    'BLE',0
 S_BCC       DC.B    'BCC',0
 S_MOVE_B    DC.B    'MOVE.B',0
 S_MOVEA_W   DC.B    'MOVEA.W',0
-S_MOVE_W    DC.B    'MOVE.B',0
+S_MOVE_W    DC.B    'MOVE.W',0
 S_MOVEA_L   DC.B    'MOVEA.L',0
 S_MOVE_L    DC.B    'MOVE.L',0
 

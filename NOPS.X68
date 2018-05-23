@@ -28,7 +28,11 @@ HAI
     BLE     HAI
     CMP.W   #$1111,D2
     BCC     HAI  
-
+    MOVE.B  #$11,D3
+    MOVE.L  #$1234FFFF,D4
+    MOVE.W  #$1234,D5
+    MOVEA.W (A2),A3
+    MOVEA.L (A2),A5
     NOP
     NOP
     NOP
