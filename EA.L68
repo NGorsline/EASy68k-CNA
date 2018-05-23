@@ -1,0 +1,69 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/20/2018 9:16:31 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7      
+00000000                             8      ** Error message
+00000000  BE3C 0000                  9      CMP.B #0,D7
+00000004  6700 0012                 10      BEQ EA_ERROR
+00000008                            11      
+00000008                            12      
+00000008                            13      ** NOP
+00000008  BE3C 0001                 14      CMP.B #1,D7
+0000000C  6700 000A                 15      BEQ EA_NOP
+00000010                            16      
+00000010                            17      ** JSR
+00000010  BE3C 001D                 18      CMP.B #29,D7
+00000014  6700 0002                 19      BEQ EA_JSR_MODE
+00000018                            20     
+00000018                            21      
+00000018                            22  EA_ERROR                        * 0
+00000018                            23  
+00000018                            24  EA_NOP                          * 1
+00000018                            25      
+00000018                            26  
+00000018                            27  EA_JSR_MODE                     * 29
+00000018  343C 0038                 28      MOVE.W  #JSR_MODE_MASK, D2
+0000001C  C445                      29      AND.W   D5,D2
+0000001E  B47C 0010                 30      CMP.W   #$0010,D2           * Checking if addressing mode is (An)
+00000022  6700 000A                 31      BEQ     EA_JSR_AN_MODE      * Mode is (An)
+00000026  B47C 0048                 32      CMP.W   #$0048,D2           * Checking if addressing mode is (XXX).W or (XXX).L
+0000002A  6700 0002                 33      BEQ     EA_JSR_ABSOLUTE_ADDR
+0000002E                            34  
+0000002E                            35  EA_JSR_AN_MODE
+0000002E                            36  *Get register register
+0000002E                            37  
+0000002E                            38  EA_JSR_ABSOLUTE_ADDR
+0000002E                            39  *Check if mode is 111, that register is either 000 or 001
+0000002E                            40      
+0000002E                            41  *** Masks constants
+0000002E                            42  
+0000002E  =00000038                 43  JSR_MODE_MASK     EQU     %0000000000111000
+0000002E  =00000007                 44  JSR_REG_MASK      EQU     %0000000000000111
+0000002E                            45  
+0000002E                            46  
+0000002E                            47    
+0000002E                            48  
+0000002E                            49      
+Line 50 WARNING: END directive missing, starting address not set
+
+No errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+EA_ERROR            18
+EA_JSR_ABSOLUTE_ADDR  2E
+EA_JSR_AN_MODE      2E
+EA_JSR_MODE         18
+EA_NOP              18
+JSR_MODE_MASK       38
+JSR_REG_MASK        7
