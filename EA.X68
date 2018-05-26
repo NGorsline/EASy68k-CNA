@@ -28,34 +28,53 @@
 *    RTS
 
 MOVE_EA
+
+;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
+    * 1.) Mask 3 LSB into D6 (reg #)
+    * 2.) ROR 3 bits
+    * 3.) Mask 3 LSB into D0 (mode #)
+    * 4.) Call mode-specific buffer writer
+;; NOTES: there will be one mode-specific buffer writer for each mode.
+;; The routine will write mode-specific strings to the buffer in addition to
+;; the register number (converted to ASCII). Use A3 and A4 to do this.
+    * 5.) Write a comma
+    * 6.) ROR 3 bits
+    * 7.) Mask 3 LSB into D0 (mode #)
+    * 8.) ROR 3 bits
+    * 9.) Mask 3 LSB into D6 (reg #)
+    * 10.) Call mode-specific buffer writer
+    * 11.) Return to I/O module
+    
+
     MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (register #)
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds register #
-    ROR.L   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
-    MOVE.L  D5,D2               * D2 will hold the mode
-    AND.W   #THREE_LSB_MASK,D2  * D2 now holds mode code
+    ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
+    MOVE.L  D5,D0               * D0 will hold the mode
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
+    *BRA    DO_MODE
 
     ** Check D2 (mode) against all possible modes for this op-code pattern
-    CMP.W   #0,D2       * Mode: Data register direct
+    CMP.W   #0,D0       * Mode: Data register direct
     BEQ     DATA_REG_DIR
-    CMP.W   #0,D2       * Check again to branch after subroutine returns
+    CMP.W   #0,D0       * Check again to branch after subroutine returns
     BEQ     MODE_2
 
-    CMP.W   #2,D2       * Mode: Address register indirect
+    CMP.W   #2,D0       * Mode: Address register indirect
     BEQ     ADDR_REG_INDIR
-    CMP.W   #2,D2       * Check again to branch after subroutine returns
+    CMP.W   #2,D0       * Check again to branch after subroutine returns
     BEQ     MODE_2
 
-    CMP.W   #3,D2       * Mode: Address register indirect post increment
+    CMP.W   #3,D0       * Mode: Address register indirect post increment
     BEQ     ADDR_REG_INCR
-    CMP.W   #3,D2       * Check again to branch after subroutine returns
+    CMP.W   #3,D0       * Check again to branch after subroutine returns
     BEQ     MODE_2
 
-    CMP.W   #4,D2       * Mode: Address register indirect pre increment
+    CMP.W   #4,D0       * Mode: Address register indirect pre increment
     BEQ     ADDR_REG_DEC
-    CMP.W   #4,D2       * Check again to branch after subroutine returns
+    CMP.W   #4,D0       * Check again to branch after subroutine returns
     BEQ     MODE_2
 
-    CMP.W   #7,D2       * Mode: Absolute addressing (word or longword)
+    CMP.W   #7,D0       * Mode: Absolute addressing (word or longword)
     BEQ     GET_ABS_LENGTH
 
     BRA     INVALID_EA
@@ -75,6 +94,10 @@ GET_ABS_LENGTH
 
 MODE_2
     
+    
+DO_MODE
+*maybe use this subroutine to check which mode it is? instead of long lists of
+*manually checking in each opcode-specific routine
 
 *** D6 -> Register number to right (i.e., 0-7)
 DATA_REG_DIR

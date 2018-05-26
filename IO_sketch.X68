@@ -120,7 +120,7 @@ MAIN_LOOP
 PRINT_LOOP ;; Print the most recently decoded line
     * FIRST print a null terminator at (A4) [write loop in EA module does not do this]
     LEA     NULL_TERM,A3
-    MOVE.B  (A3),(A4)+  * This way trap task 13 works
+    MOVE.B  (A3),(A4)+   * This way trap task 13 works
     MOVE.B  #13,D0
     TRAP    #15
     BRA     MAIN_LOOP
