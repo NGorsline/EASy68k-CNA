@@ -1,6 +1,6 @@
 00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/23/2018 12:34:05 AM
+Created On: 5/25/2018 11:13:31 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : NOPs
@@ -13,35 +13,33 @@ Created On: 5/23/2018 12:34:05 AM
 00000300  4EB9 00000306              9      JSR HAI
 00000306                            10  HAI
 00000306  4E71                      11      NOP
-00000308  0605 00AB                 12      ADDI.B  #$AB,D5
-0000030C  4E71                      13      NOP
-0000030E  4E71                      14      NOP
-00000310  4E75                      15      RTS
-00000312  4E71                      16      NOP
-00000314  4E71                      17      NOP
-00000316  4EB8 0306                 18      JSR HAI
-0000031A  0405 0011                 19      SUBI.B  #$11,D5
-0000031E  4245                      20      CLR     D5
-00000320  4E75                      21      RTS
-00000322  45F9 DC00FF00             22      LEA $DC00FF00,A2
-00000328  7EFF                      23      MOVEQ #$FF,D7
-0000032A                            24      
-0000032A  B47C 1111                 25      CMP.W   #$1111,D2
-0000032E  6ED6                      26      BGT     HAI
-00000330  B47C 1111                 27      CMP.W   #$1111,D2
-00000334  6FD0                      28      BLE     HAI
-00000336  B47C 1111                 29      CMP.W   #$1111,D2
-0000033A  64CA                      30      BCC     HAI  
-0000033C  163C 0011                 31      MOVE.B  #$11,D3
-00000340  283C 1234FFFF             32      MOVE.L  #$1234FFFF,D4
-00000346  3A3C 1234                 33      MOVE.W  #$1234,D5
-0000034A  3652                      34      MOVEA.W (A2),A3
-0000034C  2A52                      35      MOVEA.L (A2),A5
-0000034E  4E71                      36      NOP
-00000350  4E71                      37      NOP
-00000352  4E71                      38      NOP
-00000354                            39      
-00000354                            40      END    START        ; last line of source
+00000308  4E71                      12      NOP
+0000030A  4E71                      13      NOP
+0000030C  4E75                      14      RTS
+0000030E  4E71                      15      NOP
+00000310  4E71                      16      NOP
+00000312  0405 0011                 17      SUBI.B  #$11,D5
+00000316  4245                      18      CLR     D5
+00000318  4E75                      19      RTS
+0000031A  45F9 DC00FF00             20      LEA $DC00FF00,A2
+00000320  7EFF                      21      MOVEQ   #$FF,D7
+00000322                            22      
+00000322  B47C 1111                 23      CMP.W   #$1111,D2
+00000326  6EDE                      24      BGT     HAI
+00000328  B47C 1111                 25      CMP.W   #$1111,D2
+0000032C  6FD8                      26      BLE     HAI
+0000032E  B47C 1111                 27      CMP.W   #$1111,D2
+00000332  64D2                      28      BCC     HAI  
+00000334  163C 0011                 29      MOVE.B  #$11,D3
+00000338  283C 1234FFFF             30      MOVE.L  #$1234FFFF,D4
+0000033E  3A3C 1234                 31      MOVE.W  #$1234,D5
+00000342  3652                      32      MOVEA.W (A2),A3
+00000344  2A52                      33      MOVEA.L (A2),A5
+00000346  4E71                      34      NOP
+00000348  4E71                      35      NOP
+0000034A  4E71                      36      NOP
+0000034C                            37      
+0000034C                            38      END    START        ; last line of source
 
 No errors detected
 No warnings generated

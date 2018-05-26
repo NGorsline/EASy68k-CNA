@@ -9,18 +9,16 @@ START:                  ; first instruction of program
     JSR HAI
 HAI
     NOP
-    ADDI.B  #$AB,D5
     NOP
     NOP
     RTS
     NOP
     NOP
-    JSR HAI
     SUBI.B  #$11,D5
     CLR     D5
     RTS
     LEA	$DC00FF00,A2
-    MOVEQ #$FF,D7
+    MOVEQ   #$FF,D7
     
     CMP.W   #$1111,D2
     BGT     HAI
@@ -38,6 +36,9 @@ HAI
     NOP
     
     END    START        ; last line of source
+
+
+
 
 
 *~Font name~Courier New~

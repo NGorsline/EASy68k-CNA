@@ -5,18 +5,27 @@
 * Description: EA Module of the 68k disassembler
 *-----------------------------------------------------------
 
+;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
+
 ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
 
 *** A3 -> Null-terminated string to write (load before calling)
 *** A4 -> Location in memory to write to
+
+*** D0 -> Holds mode # (used by WRITE)
+*** D6 -> Holds register # (used by WRITE)
+
+
+
+;; PROBABLY REMOVE THIS WRITE SR
 *** Call this function to print the string loaded in A3 to the running
 *** human-readable line. Note that this subroutine will not write a null
 *** terminator; one must be written at the very end of decoding a full command.
-WRITE   * Writes tring pointed to by A3 to memory pointed to by A4
-    MOVE.B  (A3)+,(A4)+     * Write one byte and increment
-    CMP.B   #0,(A3)         * Check if the null terminator has been reached
-    BNE     WRITE           * If not, keep writing!
-    RTS
+*WRITE   * Writes tring pointed to by A3 to memory pointed to by A4
+*    MOVE.B  (A3)+,(A4)+     * Write one byte and increment
+*    CMP.B   #0,(A3)         * Check if the null terminator has been reached
+*    BNE     WRITE           * If not, keep writing!
+*    RTS
 
 MOVE_EA
     MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (register #)
@@ -126,6 +135,7 @@ THREE_LSB_MASK  EQU     %0000000000000111
 
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
 *??
+
 
 
 

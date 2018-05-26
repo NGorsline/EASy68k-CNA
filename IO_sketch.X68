@@ -118,6 +118,9 @@ MAIN_LOOP
     JSR     OP_DECODE
     
 PRINT_LOOP ;; Print the most recently decoded line
+    * FIRST print a null terminator at (A4) [write loop in EA module does not do this]
+    LEA     NULL_TERM,A3
+    MOVE.B  (A3),(A4)+  * This way trap task 13 works
     MOVE.B  #13,D0
     TRAP    #15
     BRA     MAIN_LOOP
@@ -203,6 +206,7 @@ END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to sta
 ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
 ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
 PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+NULL_TERM       DC.B    '',0
 LF              EQU      $0A
 CR              EQU      $0D
 
@@ -220,6 +224,7 @@ END_NOW
     
     INCLUDE 'OP.X68'
     END    START        ; last line of source
+
 
 
 

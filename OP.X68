@@ -270,12 +270,12 @@ PRINT_COME_BACK_MSG
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-    MOVEA.L A4,A1     * Save the position of A1 before writing (for I/0)
+    MOVEA.L A4,A1     * Save the position of A4 before writing (for I/0)
 WRITE_LOOP
     MOVE.B  (A3)+,(A4)+     * Write one byte and increment
     CMP.B   #0,(A3)         * Are we at the null terminator?
     BNE     WRITE_LOOP      * If not, keep going
-    MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
+    **MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
     RTS                     * Executes once null terminator was reached
     
 ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
@@ -288,24 +288,24 @@ CODE_RTS    EQU     $4E75
 A4_PREV     SET     $2000
 
 *** Strings for opcodes (write these to memory)
-S_NOP       DC.B    'NOP',0
-S_RTS       DC.B    'RTS',0
-S_MOVE      DC.B    'MOVE',0
+S_NOP       DC.B    'NOP            ',0
+S_RTS       DC.B    'RTS            ',0
+S_MOVE      DC.B    'MOVE           ',0
 S_JSR       DC.B    'JSR',0
-S_ADDQ      DC.B    'ADDQ',0
-S_ADDI      DC.B    'ADDI',0
-S_SUBI      DC.B    'SUBI',0
-S_CLR       DC.B    'CLR',0
-S_LEA       DC.B    'LEA',0    
-S_MOVEQ     DC.B    'MOVEQ',0
-S_BGT       DC.B    'BGT',0
-S_BLE       DC.B    'BLE',0
-S_BCC       DC.B    'BCC',0
-S_MOVE_B    DC.B    'MOVE.B',0
-S_MOVEA_W   DC.B    'MOVEA.W',0
-S_MOVE_W    DC.B    'MOVE.W',0
-S_MOVEA_L   DC.B    'MOVEA.L',0
-S_MOVE_L    DC.B    'MOVE.L',0
+S_ADDQ      DC.B    'ADDQ           ',0
+S_ADDI      DC.B    'ADDI           ',0
+S_SUBI      DC.B    'SUBI           ',0
+S_CLR       DC.B    'CLR            ',0
+S_LEA       DC.B    'LEA            ',0    
+S_MOVEQ     DC.B    'MOVEQ          ',0
+S_BGT       DC.B    'BGT            ',0
+S_BLE       DC.B    'BLE            ',0
+S_BCC       DC.B    'BCC            ',0
+S_MOVE_B    DC.B    'MOVE.B         ',0
+S_MOVEA_W   DC.B    'MOVEA.W        ',0
+S_MOVE_W    DC.B    'MOVE.W         ',0
+S_MOVEA_L   DC.B    'MOVEA.L        ',0
+S_MOVE_L    DC.B    'MOVE.L         ',0
 
 
 *** Strings for messages 
@@ -326,6 +326,7 @@ Bcc_MASK        EQU     %0000111100000000
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
 
 
 *~Font name~Courier New~
