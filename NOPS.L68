@@ -1,6 +1,6 @@
 00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/25/2018 11:13:31 PM
+Created On: 5/26/2018 5:40:22 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : NOPs
@@ -10,36 +10,48 @@ Created On: 5/25/2018 11:13:31 PM
 00000000                             6  *-----------------------------------------------------------
 00000300                             7      ORG    $0300
 00000300                             8  START:                  ; first instruction of program
-00000300  4EB9 00000306              9      JSR HAI
-00000306                            10  HAI
-00000306  4E71                      11      NOP
-00000308  4E71                      12      NOP
-0000030A  4E71                      13      NOP
-0000030C  4E75                      14      RTS
-0000030E  4E71                      15      NOP
-00000310  4E71                      16      NOP
-00000312  0405 0011                 17      SUBI.B  #$11,D5
-00000316  4245                      18      CLR     D5
-00000318  4E75                      19      RTS
-0000031A  45F9 DC00FF00             20      LEA $DC00FF00,A2
-00000320  7EFF                      21      MOVEQ   #$FF,D7
-00000322                            22      
-00000322  B47C 1111                 23      CMP.W   #$1111,D2
-00000326  6EDE                      24      BGT     HAI
-00000328  B47C 1111                 25      CMP.W   #$1111,D2
-0000032C  6FD8                      26      BLE     HAI
-0000032E  B47C 1111                 27      CMP.W   #$1111,D2
-00000332  64D2                      28      BCC     HAI  
-00000334  163C 0011                 29      MOVE.B  #$11,D3
-00000338  283C 1234FFFF             30      MOVE.L  #$1234FFFF,D4
-0000033E  3A3C 1234                 31      MOVE.W  #$1234,D5
-00000342  3652                      32      MOVEA.W (A2),A3
-00000344  2A52                      33      MOVEA.L (A2),A5
-00000346  4E71                      34      NOP
-00000348  4E71                      35      NOP
-0000034A  4E71                      36      NOP
-0000034C                            37      
-0000034C                            38      END    START        ; last line of source
+00000300                             9      *JSR HAI
+00000300                            10  HAI
+00000300  4E71                      11      NOP
+00000302  1802                      12      MOVE.B  D2,D4
+00000304  2A00                      13      MOVE.L  D0,D5
+00000306  3E03                      14      MOVE.W  D3,D7
+00000308  4E71                      15      NOP
+0000030A  4E71                      16      NOP
+0000030C  4E71                      17      NOP
+0000030E  4E71                      18      NOP
+00000310  4E71                      19      NOP
+00000312  1201                      20      MOVE.B  D1,D1
+00000314  1805                      21      MOVE.B  D5,D4
+00000316  1407                      22      MOVE.B  D7,D2
+00000318                            23      
+00000318                            24      
+00000318                            25      
+00000318                            26      
+00000318                            27      
+00000318                            28      *MOVE.B  D2,D4
+00000318                            29  *    SUBI.B  #$11,D5
+00000318                            30  *    CLR     D5
+00000318                            31  *    RTS
+00000318                            32  *    LEA    $DC00FF00,A2
+00000318                            33  *    MOVEQ   #$FF,D7
+00000318                            34  *    
+00000318                            35  *    CMP.W   #$1111,D2
+00000318                            36  *    BGT     HAI
+00000318                            37  *    CMP.W   #$1111,D2
+00000318                            38  *    BLE     HAI
+00000318                            39  *    CMP.W   #$1111,D2
+00000318                            40  *    BCC     HAI  
+00000318                            41  *    MOVE.B  D2,D3
+00000318                            42  *    MOVE.L  D3,D4
+00000318                            43  *    MOVE.W  D4,D5
+00000318                            44  *    *MOVEA.W (A2),A3
+00000318                            45  *    *MOVEA.L (A2),A5
+00000318                            46  *    NOP
+00000318                            47  *    NOP
+00000318                            48  *    NOP
+00000318                            49      
+00000318                            50      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -48,5 +60,5 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-HAI                 306
+HAI                 300
 START               300

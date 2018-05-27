@@ -129,8 +129,8 @@ IXXX_BRA
 DO_MOVE_B
     LEA     S_MOVE_B,A3
     MOVE.B  #$2A,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     MOVE_EA
     RTS
 DO_MOVEA_W
     LEA     S_MOVEA_W,A3
@@ -141,8 +141,8 @@ DO_MOVEA_W
 DO_MOVE_W
     LEA     S_MOVE_W,A3
     MOVE.B  #$2B,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     MOVE_EA
     RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
@@ -153,8 +153,8 @@ DO_MOVEA_L
 DO_MOVE_L
     LEA     S_MOVE_L,A3
     MOVE.B  #$2C,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     MOVE_EA
     RTS
 
 DO_BCC_CASE
@@ -270,12 +270,12 @@ PRINT_COME_BACK_MSG
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-    MOVEA.L A4,A1     * Save the position of A4 before writing (for I/0)
+    *MOVEA.L A4,A1     * Save the position of A4 before writing (for I/0)
 WRITE_LOOP
     MOVE.B  (A3)+,(A4)+     * Write one byte and increment
     CMP.B   #0,(A3)         * Are we at the null terminator?
     BNE     WRITE_LOOP      * If not, keep going
-    **MOVE.B  (A3)+,(A4)+     * Write the null terminator before exiting
+    *MOVE.B  #$2C,(A4)+     * Write the null terminator before exiting
     RTS                     * Executes once null terminator was reached
     
 ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
@@ -291,12 +291,12 @@ A4_PREV     SET     $2000
 S_NOP       DC.B    'NOP            ',0
 S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
-S_JSR       DC.B    'JSR',0
+S_JSR       DC.B    'JSR            ',0
 S_ADDQ      DC.B    'ADDQ           ',0
 S_ADDI      DC.B    'ADDI           ',0
 S_SUBI      DC.B    'SUBI           ',0
 S_CLR       DC.B    'CLR            ',0
-S_LEA       DC.B    'LEA            ',0    
+S_LEA       DC.B    'LEA            ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
 S_BGT       DC.B    'BGT            ',0
 S_BLE       DC.B    'BLE            ',0

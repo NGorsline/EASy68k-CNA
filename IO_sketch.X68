@@ -14,7 +14,7 @@ START:                  ; first instruction of program
     MOVE.B  #14,D0
     TRAP    #15
 
-    LEA     buffer,A1       * Load buffer's effective address into A1
+    MOVEA.L A4,A1           * Initialize A1 to point at same place as A4
     MOVE.B  #2,D0           * get the starting address from the user as a string
     
     TRAP    #15         
@@ -118,11 +118,12 @@ MAIN_LOOP
     JSR     OP_DECODE
     
 PRINT_LOOP ;; Print the most recently decoded line
-    * FIRST print a null terminator at (A4) [write loop in EA module does not do this]
+    * FIRST put a null terminator at (A4) [write loop in EA module does not do this]
     LEA     NULL_TERM,A3
-    MOVE.B  (A3),(A4)+   * This way trap task 13 works
+    MOVE.B  (A3),(A4)+    * This way trap task 13 works
     MOVE.B  #13,D0
     TRAP    #15
+    MOVEA.L A4,A1         * Inch up A1 to match A4 for next print
     BRA     MAIN_LOOP
     
 ;; print nops
@@ -214,15 +215,20 @@ buffer  DC.L    1
 
 DISM_CODE     EQU     $8000 * Where to write disassembled code
     
-    NOP
+    NOP * Ensures that included file aligns on word boundary
 
 END_NOW
     LEA     DONE_MSG,A1
     MOVE.B  #1,D0
     TRAP    #15
-    LEA     buffer,A1
+    *LEA     buffer,A1
     
     INCLUDE 'OP.X68'
+    
+    NOP * Ensures that included file aligns on word boundary
+    
+    INCLUDE 'EA.X68'
+    
     END    START        ; last line of source
 
 

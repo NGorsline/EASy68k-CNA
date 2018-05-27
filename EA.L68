@@ -1,57 +1,156 @@
-00001000 Starting Address
+00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/20/2018 9:16:31 PM
+Created On: 5/26/2018 3:22:02 PM
 
 00000000                             1  *-----------------------------------------------------------
-00000000                             2  * Title      :
-00000000                             3  * Written by :
-00000000                             4  * Date       :
-00000000                             5  * Description:
+00000000                             2  * Title      : EA Module
+00000000                             3  * Written by : Toucans (Audrey Chae, Nick Gorsline, Clayton Snyder)
+00000000                             4  * Date       : 5/20/2018
+00000000                             5  * Description: EA Module of the 68k disassembler
 00000000                             6  *-----------------------------------------------------------
-00000000                             7      
-00000000                             8      ** Error message
-00000000  BE3C 0000                  9      CMP.B #0,D7
-00000004  6700 0012                 10      BEQ EA_ERROR
-00000008                            11      
-00000008                            12      
-00000008                            13      ** NOP
-00000008  BE3C 0001                 14      CMP.B #1,D7
-0000000C  6700 000A                 15      BEQ EA_NOP
-00000010                            16      
-00000010                            17      ** JSR
-00000010  BE3C 001D                 18      CMP.B #29,D7
-00000014  6700 0002                 19      BEQ EA_JSR_MODE
-00000018                            20     
-00000018                            21      
-00000018                            22  EA_ERROR                        * 0
-00000018                            23  
-00000018                            24  EA_NOP                          * 1
-00000018                            25      
-00000018                            26  
-00000018                            27  EA_JSR_MODE                     * 29
-00000018  343C 0038                 28      MOVE.W  #JSR_MODE_MASK, D2
-0000001C  C445                      29      AND.W   D5,D2
-0000001E  B47C 0010                 30      CMP.W   #$0010,D2           * Checking if addressing mode is (An)
-00000022  6700 000A                 31      BEQ     EA_JSR_AN_MODE      * Mode is (An)
-00000026  B47C 0048                 32      CMP.W   #$0048,D2           * Checking if addressing mode is (XXX).W or (XXX).L
-0000002A  6700 0002                 33      BEQ     EA_JSR_ABSOLUTE_ADDR
-0000002E                            34  
-0000002E                            35  EA_JSR_AN_MODE
-0000002E                            36  *Get register register
-0000002E                            37  
-0000002E                            38  EA_JSR_ABSOLUTE_ADDR
-0000002E                            39  *Check if mode is 111, that register is either 000 or 001
-0000002E                            40      
-0000002E                            41  *** Masks constants
-0000002E                            42  
-0000002E  =00000038                 43  JSR_MODE_MASK     EQU     %0000000000111000
-0000002E  =00000007                 44  JSR_REG_MASK      EQU     %0000000000000111
-0000002E                            45  
-0000002E                            46  
-0000002E                            47    
-0000002E                            48  
-0000002E                            49      
-Line 50 WARNING: END directive missing, starting address not set
+00000000                             7  
+00000000                             8  ;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
+00000000                             9  
+00000000                            10  ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
+00000000                            11  
+00000000                            12  *** A3 -> Null-terminated string to write (load before calling)
+00000000                            13  *** A4 -> Location in memory to write to
+00000000                            14  
+00000000                            15  *** D0 -> Holds mode # (used by WRITE)
+00000000                            16  *** D6 -> Holds register # (used by WRITE)
+00000000                            17  
+00000000                            18  
+00000000                            19  
+00000000                            20  ;; PROBABLY REMOVE THIS WRITE SR
+00000000                            21  *** Call this function to print the string loaded in A3 to the running
+00000000                            22  *** human-readable line. Note that this subroutine will not write a null
+00000000                            23  *** terminator; one must be written at the very end of decoding a full command.
+00000000                            24  *WRITE   * Writes tring pointed to by A3 to memory pointed to by A4
+00000000                            25  *    MOVE.B  (A3)+,(A4)+     * Write one byte and increment
+00000000                            26  *    CMP.B   #0,(A3)         * Check if the null terminator has been reached
+00000000                            27  *    BNE     WRITE           * If not, keep writing!
+00000000                            28  *    RTS
+00000000                            29  
+00000000                            30  MOVE_EA
+00000000                            31  
+00000000                            32  ;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
+00000000                            33      * 1.) Mask 3 LSB into D6 (reg #)
+00000000                            34      * 2.) ROR 3 bits
+00000000                            35      * 3.) Mask 3 LSB into D0 (mode #)
+00000000                            36      * 4.) Call mode-specific buffer writer (DO_MODE -> write_mode_x)
+00000000                            37  ;; NOTES: there will be one mode-specific buffer writer for each mode.
+00000000                            38  ;; The routine will write mode-specific strings to the buffer in addition to
+00000000                            39  ;; the register number (converted to ASCII). Use A3 and A4 to do this.
+00000000                            40      * 5.) Write a comma
+00000000                            41      * 6.) ROR 3 bits
+00000000                            42      * 7.) Mask 3 LSB into D0 (mode #)
+00000000                            43      * 8.) ROR 3 bits
+00000000                            44      * 9.) Mask 3 LSB into D6 (reg #)
+00000000                            45      * 10.) Call mode-specific buffer writer
+00000000                            46      * 11.) Return to I/O module
+00000000                            47      
+00000000                            48  
+00000000  2C05                      49      MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
+00000002  CC7C 0007                 50      AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
+00000006  E65D                      51      ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
+00000008  2005                      52      MOVE.L  D5,D0               * D0 will hold the mode
+0000000A  C07C 0007                 53      AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+0000000E  4EB9 0000002C             54      JSR     DO_MODE             * Get source mode decoded and written to buffer
+00000014                            55      
+00000014                            56      ** CURRENT BUFFER STATE: MOVE.x         Xn
+00000014                            57      
+00000014  18F8 002C                 58      MOVE.B  ',',(A4)+           * Write the comma between EA modes
+00000018  E65D                      59      ROR.W   #3,D5               * dest mode is now 3 LSB of D5
+0000001A  C07C 0007                 60      AND.W   #THREE_LSB_MASK,D0  * D0 now holds dest mode code
+0000001E  E65D                      61      ROR.W   #3,D5               * source register is now 3 LSB of D5
+00000020  CC7C 0007                 62      AND.W   #THREE_LSB_MASK,D6  * mask source register into D6
+00000024  4EB9 0000002C             63      JSR     DO_MODE             * Get dest mode decoded and written to buffer
+0000002A                            64      
+0000002A                            65      ** FINAL BUFFER STATE: MOVE.x         Xn,Xn
+0000002A                            66      
+0000002A  4E75                      67      RTS
+0000002C                            68      
+0000002C                            69      
+0000002C                            70      
+0000002C                            71  ;; Finds the mode stored in D6 and branches to appropriate SR to write to the buffer
+0000002C                            72  DO_MODE
+0000002C  B03C 0000                 73      CMP.B   #00,D0      ** Mode 0 - Data Register Direct
+00000030  6700 0024                 74      BEQ     DR_DIRECT
+00000034                            75      
+00000034  B03C 0001                 76      CMP.B   #01,D0      ** Mode 1 - Address Register Direct
+00000038  6700 0028                 77      BEQ     AR_DIRECT   
+0000003C                            78      
+0000003C  B03C 0002                 79      CMP.B   #02,D0      ** Mode 2 - Address Register Indirect
+00000040  6700 0020                 80      BEQ     AR_INDIRECT
+00000044                            81      
+00000044  B03C 0003                 82      CMP.B   #03,D0      ** Mode 3 - Address Register Indirect w/ Post-increment
+00000048  6700 0018                 83      BEQ     AR_POSTINC
+0000004C                            84      
+0000004C  B03C 0004                 85      CMP.B   #04,D0      ** Mode 4 - Address Register Indirect w/ Pre-decrement
+00000050  6700 0010                 86      BEQ     AR_PREDEC
+00000054                            87      
+00000054                            88      ** HERE: check for non-required EA modes (101, 110, 111 w/ 010 in Xn, 111 w/ 011 in Xn)
+00000054                            89      ** if found, branch to "unsupported EA mode" branch
+00000054                            90      
+00000054  4E75                      91      RTS
+00000056                            92  
+00000056                            93  
+00000056                            94  DR_DIRECT   *** Mode 0
+00000056  18F8 0044                 95      MOVE.B  'D',(A4)+   * Write D to the buffer
+0000005A  0606 0030                 96      ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
+0000005E  18C6                      97      MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+00000060  4E75                      98      RTS
+00000062                            99  
+00000062                           100  AR_DIRECT   *** Mode 1
+00000062                           101  *    LEA     OPEN_PAREN_A,A3
+00000062                           102  *    JSR     WRITE
+00000062                           103  *    * Get the register number from D6, adding $30 to convert to ASCII
+00000062                           104  *    ADDI.B  #$30,D6
+00000062                           105      
+00000062                           106  
+00000062                           107  AR_INDIRECT *** Mode 2
+00000062                           108      * WRITE (A
+00000062                           109      * WRITE NUMBER IN D6
+00000062                           110      * WRITE )
+00000062                           111  
+00000062                           112  AR_POSTINC  *** Mode 3
+00000062                           113      * WRITE (A
+00000062                           114      * WRITE NUMBER IN D6
+00000062                           115      * WRITE )+
+00000062                           116      
+00000062                           117  AR_PREDEC   *** Mode 4
+00000062                           118      * WRITE -(A
+00000062                           119      * WRITE NUMBER IN D6
+00000062                           120      * WRITE )
+00000062                           121  
+00000062                           122  IMM_DATA
+00000062                           123      * HOW TO DO THIS?
+00000062                           124  
+00000062                           125  ABS_LONG
+00000062                           126      * GET LONG FROM (A6)+
+00000062                           127      * WRITE $
+00000062                           128      * WRITE DATA GOT FROM A6
+00000062                           129  
+00000062                           130  ABS_WORD
+00000062                           131      * GET WORD FROM (A6)+
+00000062                           132      * WRITE $
+00000062                           133      * WRITE DATA GOT FROM A6
+00000062                           134      
+00000062                           135  *OPEN_PAREN_A    DC.B    '(A',0
+00000062                           136  *OPEN_PAREN_D    DC.B    '(D',0
+00000062                           137  *DECR_OPEN_PAREN DC.B    '-(',0
+00000062                           138  *CLOSE_PAREN     DC.B    ')',0
+00000062                           139  *INC_CLOSE_PAREN DC.B    ')+',0
+00000062                           140  
+00000062                           141  *** MASKS
+00000062  =00000007                142  THREE_LSB_MASK  EQU     %0000000000000111
+00000062                           143  
+00000062                           144  ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
+00000062                           145  *??
+00000062                           146  
+00000062                           147  
+00000062                           148  
+Line 149 WARNING: END directive missing, starting address not set
 
 No errors detected
 1 warning generated
@@ -60,10 +159,14 @@ No errors detected
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-EA_ERROR            18
-EA_JSR_ABSOLUTE_ADDR  2E
-EA_JSR_AN_MODE      2E
-EA_JSR_MODE         18
-EA_NOP              18
-JSR_MODE_MASK       38
-JSR_REG_MASK        7
+ABS_LONG            62
+ABS_WORD            62
+AR_DIRECT           62
+AR_INDIRECT         62
+AR_POSTINC          62
+AR_PREDEC           62
+DO_MODE             2C
+DR_DIRECT           56
+IMM_DATA            62
+MOVE_EA             0
+THREE_LSB_MASK      7
