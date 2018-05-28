@@ -13,7 +13,8 @@ START:                  ; first instruction of program
 
     ; A4 will point at where we write disassembled code (use to write ASCII)
     MOVEA.L #DISM_CODE,A4
-    
+    ; Jump to logo print lol
+    JSR     PRINT_TOUCAN 
     ; Print the input prompt message and get input as a string from user
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
@@ -46,10 +47,79 @@ START:                  ; first instruction of program
     MOVEA.L D2,A5           * compare A6 to A5 to know when to stop
     CMPA.L  A5,A6           * check beginning address >= end address
     BGE     ERROR_END_LTE_BEG
+
     BRA     MAIN_LOOP       * if all error checks pass, start main loop
     
 
+;; ~~~~~~~~INITIALIZE LINE COUNTER~~~~~~~~
+    
+;; ~~~~~~~~END OF INITIALIZE LINE COUNTER~~~~~~~~
 
+;; ~~~~~~~~PRINT TEAM LOGO~~~~~~~~
+PRINT_TOUCAN
+    LEA     TC00,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC01,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC02,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC03,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC04,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC05,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC06,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC07,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC08,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC09,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC10,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC11,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC12,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC13,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC15,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC16,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     TC17,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     NEW_LINE,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    
+  
+ 
+    
+    RTS
+
+    
+    
+;; ~~~~~~~~END OF PRINT TEAM LOGO~~~~~~~~
 
 
 ;; ~~~~~~~~BEGINNING OF CONVERSION SUBROUTINE~~~~~~~~
@@ -155,6 +225,14 @@ ADD_SP_LOOP             * Adding space loop
 
 
 
+
+;; ~~~~~~~~OPCODE PRINTED COUNTER~~~~~~~~
+CHECK_LINES_PRINTED 
+
+;; ~~~~~~~~END OF OPCODE PRINTED COUNTER~~~~~~~~
+
+
+
   
 ; Main loop of the program; Checks if the iterator (A6) is past the ending 
 ; address (A5). If not, calls the OP module. Once the OP and EA modules have
@@ -172,7 +250,7 @@ MAIN_LOOP
     MOVE.B  #$00,(A4)+  * Write null term at end of freshly decoded line
     MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
     TRAP    #15
-    ;;; NICK -- I think you could put logic for printing 10 at a time here.
+    
     BRA     MAIN_LOOP
     
     * Once the loop exits, print a farewell message to the console.
@@ -197,6 +275,8 @@ ASC_CHAR_MAX    EQU     $46     * ASCII key for F
 ; Masks
 ADR_PR_MASK     EQU     %00000000000000000000000000001111
 
+; Variables
+MOVEM_LOCAL     EQU     $0000  * A place to store the data for movem
 
 ; Message strings
 NEW_LINE        DC.B    '',0,CR,LF
@@ -209,7 +289,26 @@ PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 LF              EQU      $0A
 CR              EQU      $0D
 
-DISM_CODE     EQU     $8000     * Where to write disassembled code
+TC00           DC.B '           _ _.-''''''--._       _____',0
+TC01           DC.B '        .` `.  ...------.\   |_   _|__  _   _  ___ __ _ _ __  ___ ',0
+TC02           DC.B '       / |O :-`   _,.,---"     | |/ _ \| | | |/ __/ _` | `_ \/ __|',0
+TC03           DC.B '      .  \   ;--""             | | (_) | |_| | (_| (_| | | | \__ \',0
+TC04           DC.B '      | _." (                  |_|\___/ \__,_|\___\__,_|_| |_|___/' ,0
+TC05           DC.B '      ,. _," `-.',0
+TC06           DC.B '      : /       ".',0
+TC07           DC.B '      \ \         "',0
+TC08           DC.B '       `.|         `.             __    ___  _    ',0
+TC09           DC.B '         `-._        \           / /_  ( _ )| | __',0
+TC10           DC.B '             ".  ,-.  \         | `_ \ / _ \| |/ /',0
+TC11           DC.B ' .__          _`.\..`\ \        | (_) | (_) |   < ',0
+TC12           DC.B ' ,  ""- . _,-".,-"  ``: \        \___/ \___/|_|\_\',0
+TC13           DC.B ' "-...._ (( (("-.._    \ \',0
+TC14           DC.B '        `--..      `"-. \ \ ',0
+TC15           DC.B '             `..     "   \ \',0
+TC16           DC.B '                `\ \/     `"',0
+TC17           DC.B '                  \ \ ',0
+
+DISM_CODE       EQU     $8000     * Where to write disassembled code
     
     NOP                         * Ensures included files align on word boundary
 
@@ -276,6 +375,8 @@ END_NOW
 *     CMP.L   A5,A6
 *     BLE     PRINT_IT_LOOP
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+
+
 
 
 
