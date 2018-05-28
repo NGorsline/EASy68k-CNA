@@ -135,7 +135,7 @@ IOXX_BRA
 IIXX_BRA
     BTST.L  #13,D5              * Test the third bit 
     BEQ     IIOX_BRA            * might be ADD, ADDA, MULS, MULU, AND
-    BRA     IIIX_BRA            * Might be MOVE, MOVEA
+    BRA     IIIX_BRA            
     BRA     PRINT_INVALID_MSG 
 IOOX_BRA
     BTST.L  #12,D5              * Test the fourth bit 
@@ -156,7 +156,14 @@ IIIX_BRA
     BEQ     IIIO_BRA            * might be LSR, LSL, ASR, ASL, ROL, ROR
     BRA     PRINT_INVALID_MSG   * there exists no IIII module 
 IOOO_BRA                        * Logic for OR, DIVU 
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #DIVU_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$00C0,D2           * DIVU can only be 011 in positions 8-6
+    BEQ.W   DO_DIVU_W
+    *if not DIVU, try to check if it's any form of OR
+    
+    BRA     PRINT_COME_BACK_MSG *!! COME BACK TO THIS
+
 IOOI_BRA                        * Logic for SUB
     BRA     PRINT_COME_BACK_MSG
 IOII_BRA                        * Logic for CMP
@@ -231,6 +238,11 @@ DO_ADDI
     LEA     S_ADDI,A3
     MOVE.B  #8,D7
     ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_DIVU_W
+    LEA     S_DIVU,A3
+    MOVE.B  #14,D7
     JSR     WRITE
     RTS
 DO_BGT
@@ -415,6 +427,7 @@ Bcc_MASK        EQU     %0000111100000000
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
 CMP_MASK        EQU     %1111000011000000
+DIVU_MASK       EQU     %0000000111000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 
