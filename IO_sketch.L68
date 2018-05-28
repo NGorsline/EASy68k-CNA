@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/26/2018 5:43:30 PM
+Created On: 5/27/2018 4:57:29 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :  Disassembler I/O 
@@ -12,661 +12,603 @@ Created On: 5/26/2018 5:43:30 PM
 00001000                             8  START:                  ; first instruction of program
 00001000                             9  
 00001000                            10  * Put program code here
-00001000  287C 00008000             11      MOVEA.L #DISM_CODE,A4
-00001006                            12      
-00001006  43F9 000011C4             13      LEA     ADDR_PRMPT_STRT,A1
-0000100C  103C 000E                 14      MOVE.B  #14,D0
-00001010  4E4F                      15      TRAP    #15
-00001012                            16  
-00001012  224C                      17      MOVEA.L A4,A1           * Initialize A1 to point at same place as A4
-00001014  103C 0002                 18      MOVE.B  #2,D0           * get the starting address from the user as a string
-00001018                            19      
-00001018  4E4F                      20      TRAP    #15         
-0000101A                            21      
-0000101A                            22  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
-0000101A  B27C 0004                 23      CMP     #4,D1           * minimum of a word for the address
-0000101E  6D00 008E                 24      BLT     ERROR_INV_INP   * invalid start address  
-00001022                            25      
-00001022  4EB9 0000105A             26      JSR     CONVERSION_LOOP * convert the starting address
-00001028                            27      
-00001028                            28  *** FULL STARTING ADDRESS HAS BEEN CONVERTED, STORE IN A6 AND GET ENDING ADDRESSS
-00001028  2C42                      29      MOVEA.L D2,A6           * move converted addr to A6 (A6 acts as iterator while disassembling)
-0000102A  4282                      30      CLR.L   D2              * clear register D2 in preparation to hold the converted end address
-0000102C  4284                      31      CLR.L   D4              * clear register D4 to start the counter at 0 again
-0000102E                            32      
-0000102E  43F9 000011E7             33      LEA     ADDR_PRMPT_END,A1
-00001034  103C 000E                 34      MOVE.B  #14,D0
-00001038  4E4F                      35      TRAP    #15
-0000103A                            36      
-0000103A  103C 0002                 37      MOVE.B  #2,D0           * get the ending address from the user as a string
-0000103E  4E4F                      38      TRAP    #15
-00001040                            39      
-00001040                            40  *** Need to first check if D1 is a valid size of minimum 4 (user entered at least 4 hexa bits)
-00001040  B27C 0004                 41      CMP     #4,D1           * minimum of a word for the address
-00001044  6D00 0068                 42      BLT     ERROR_INV_INP   * invalid end address
-00001048                            43      
-00001048  4EB9 0000105A             44      JSR     CONVERSION_LOOP * convert the ending address
-0000104E  2A42                      45      MOVEA.L D2,A5           * move converted addr to A5 (compare A6 to A5 to know when to stop)
-00001050  BDCD                      46      CMPA.L  A5,A6           * check if beginning address is >= end address. If so, display error
-00001052  6C00 006A                 47      BGE     ERROR_END_LTE_BEG
-00001056  6000 0076                 48      BRA     MAIN_LOOP       * skip past the CONVERSION_LOOP subroutine to continue with the program
-0000105A                            49      
-0000105A                            50  
-0000105A                            51  
-0000105A                            52  *    ADDI.B  #1,D4           * offset our counter to start at 1
-0000105A                            53  
-0000105A                            54  
-0000105A                            55  ;; ~~~~~~~~BEGINNING OF CONVERSION SUBROUTINE~~~~~~~~
-0000105A                            56  CONVERSION_LOOP       
-0000105A  1619                      57      MOVE.B  (A1)+,D3        * store the next thingy B
-0000105C                            58  *** Need to check for proper hex conversion 
-0000105C                            59  
-0000105C                            60  CHECK_NUM_MIN     ;; Checks if number is >= 30 (0) in ASCII
-0000105C  B67C 0030                 61      CMP     #ASC_NUM_MIN,D3 * Range of ASCII numbers: (2F >= 3A)[2F,3A] then subtract 30    
-00001060  6C00 0006                 62      BGE     CHECK_NUM_MAX   * check if it's in range for x > 2F
-00001064  6000 0048                 63      BRA     ERROR_INV_INP   * First condition not met, go to bad input error 
-00001068                            64      
-00001068                            65  CHECK_NUM_MAX     ;; Checks if number is <= 39 (9) in ASCII
-00001068  B67C 0039                 66      CMP     #ASC_NUM_MAX,D3
-0000106C  6F00 0020                 67      BLE     ASC_TO_NUM      * If condition for the range was met, do the math
-00001070  4EF9 00001076             68      JMP     CHECK_CHAR_MIN  * Second condition was not met, check if a character
-00001076                            69      
-00001076                            70  CHECK_CHAR_MIN    ;; Checks if number is >= 41 (A) in ASCII
-00001076  B67C 0041                 71      CMP     #ASC_CHAR_MIN,D3
-0000107A  6C00 0006                 72      BGE     CHECK_CHAR_MAX  
-0000107E  6000 002E                 73      BRA     ERROR_INV_INP   * First condition not met, D3 < 41 = symbols. Go to bad input error
-00001082                            74      
-00001082                            75  CHECK_CHAR_MAX    ;; Checks if number is <= 46 (F) in ASCII
-00001082  B67C 0046                 76      CMP     #ASC_CHAR_MAX,D3
-00001086  6F00 0010                 77      BLE     ASC_TO_CHAR     * Condition was met for A-F     
-0000108A  6000 0022                 78      BRA     ERROR_INV_INP   * Greater than 46 = out of 16-bit system
-0000108E                            79      
-0000108E                            80  ASC_TO_NUM        ;; Converts a string digit into a hex value
-0000108E  0403 0030                 81      SUBI.B  #$30,D3
-00001092  4EF9 000010A2             82      JMP     SHIFTS          * After this routine is finished, complete shifts/adds
-00001098                            83      
-00001098                            84  ASC_TO_CHAR       ;; Converts a string character into a hex value
-00001098  0403 0037                 85      SUBI.B  #$37,D3    
-0000109C  4EF9 000010A2             86      JMP     SHIFTS          * Convert a string character into a hex value
-000010A2                            87      
-000010A2                            88  SHIFTS            ;; Shifts D2 left by four bits to make room for the newly converted hexabit
-000010A2  E98A                      89      LSL.L   #4,D2           * Initial value in D2 shifted hexabit over to the left to make room   
-000010A4  D403                      90      ADD.B   D3,D2           * Add modified value from D3 into D2.
-000010A6                            91      
-000010A6  5204                      92      ADD.B   #1,D4           * Increment counter by 1 
-000010A8  B244                      93      CMP     D4,D1           * Check if we have already reached the end of the input. D4 = counter
-000010AA  66AE                      94      BNE     CONVERSION_LOOP * Continue back to the loop if D4 != D1  
-000010AC  4E75                      95      RTS
-000010AE                            96  ;; ~~~~~~~~END OF CONVERSION SUBROUTINE~~~~~~~~
-000010AE                            97      
-000010AE                            98      
-000010AE                            99      
-000010AE                           100  ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
-000010AE  43F9 00001164            101      LEA     INVALID_INPUT,A1
-000010B4  103C 000D                102      MOVE.B  #13,D0
-000010B8  4E4F                     103      TRAP    #15
-000010BA  6000 0182                104      BRA     END_NOW
-000010BE                           105      
-000010BE                           106  ERROR_END_LTE_BEG ;; Prints the END_LTE_BEG (end <= to beginning) error message to the console.
-000010BE  43F9 00001181            107      LEA     END_LTE_BEG,A1
-000010C4  103C 000D                108      MOVE.B  #13,D0
-000010C8  4E4F                     109      TRAP    #15
-000010CA  6000 0172                110      BRA     END_NOW
-000010CE                           111    
-000010CE                           112    
-000010CE                           113  MAIN_LOOP
-000010CE                           114      *BRA     END_NOW
-000010CE  BDCD                     115      CMPA.L  A5,A6
-000010D0  6C00 016C                116      BGE     END_NOW * End program
-000010D4                           117      *MOVE.W  A6,D0   * Copy A6 location to restore after jump to SR
-000010D4  4EB9 00001248            118      JSR     OP_DECODE
-000010DA                           119      
-000010DA                           120  PRINT_LOOP ;; Print the most recently decoded line
-000010DA                           121      * FIRST put a null terminator at (A4) [write loop in EA module does not do this]
-000010DA  47F9 00001236            122      LEA     NULL_TERM,A3
-000010E0  18D3                     123      MOVE.B  (A3),(A4)+    * This way trap task 13 works
-000010E2  103C 000D                124      MOVE.B  #13,D0
-000010E6  4E4F                     125      TRAP    #15
-000010E8  224C                     126      MOVEA.L A4,A1         * Inch up A1 to match A4 for next print
-000010EA  60E2                     127      BRA     MAIN_LOOP
-000010EC                           128      
-000010EC                           129  ;; print nops
-000010EC                           130  PRINT_NOPS_TEST
-000010EC  103C 000F                131      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-000010F0  143C 0010                132      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-000010F4                           133      * PRINT THE CURRENT ADDRESS
-000010F4  220E                     134      MOVE.L  A6,D1
-000010F6  4E4F                     135      TRAP    #15
-000010F8  4281                     136      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-000010FA                           137      
-000010FA  43F9 00001161            138      LEA     COLON_SPACE,A1
-00001100  103C 000E                139      MOVE.B  #14,D0
-00001104  4E4F                     140      TRAP    #15
-00001106                           141      
-00001106  103C 0001                142      MOVE.B  #1,D0   * Print string, no CRLF
-0000110A                           143      
-0000110A                           144      
-0000110A                           145      
-0000110A                           146      
-0000110A                           147  
-0000110A                           148  ;; ~~~~~~~~BEGINNING OF PRINT LOOP~~~~~~~~   
-0000110A                           149  PRINT_IT          ;; Placeholder for now; just prints all data between start and end
-0000110A  43F9 00001209            150      LEA     PRINT_IT_STRING,A1
-00001110  103C 000D                151      MOVE.B  #13,D0
-00001114  4E4F                     152      TRAP    #15
-00001116                           153      
-00001116                           154  PRINT_IT_LOOP
-00001116  103C 000F                155      MOVE.B  #15,D0  * Trap task 15 to print a signed number in the base in D2
-0000111A  143C 0010                156      MOVE.B  #16,D2  * Base 16 for the next two TRAPs
-0000111E                           157      * PRINT THE CURRENT ADDRESS
-0000111E  220E                     158      MOVE.L  A6,D1
-00001120  4E4F                     159      TRAP    #15
-00001122  4281                     160      CLR.L   D1          * clear D1 so that it holds just the data on the next print
-00001124                           161      
-00001124  43F9 00001161            162      LEA     COLON_SPACE,A1
-0000112A  103C 000E                163      MOVE.B  #14,D0
-0000112E  4E4F                     164      TRAP    #15
-00001130                           165      
-00001130  221E                     166      MOVE.L  (A6)+,D1    * move the data at the pointer into D1 and increment.
-00001132  103C 000F                167      MOVE.B  #15,D0      * Trap task 15 to print a signed number in the base in D2
-00001136  4E4F                     168      TRAP    #15
-00001138                           169      
-00001138                           170      * Print a new line
-00001138  43F9 00001158            171      LEA     NEW_LINE,A1
-0000113E  103C 000D                172      MOVE.B  #13,D0
-00001142  4E4F                     173      TRAP    #15
-00001144                           174      
-00001144                           175      * Check if end address has been reached
-00001144  BDCD                     176      CMP.L   A5,A6
-00001146  6FCE                     177      BLE     PRINT_IT_LOOP
-00001148                           178  ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
-00001148                           179  
-00001148                           180  
-00001148                           181      
-00001148                           182      
-00001148  43F9 0000115B            183      LEA     DONE_MSG,A1
-0000114E  103C 000D                184      MOVE.B  #13,D0
-00001152  4E4F                     185      TRAP    #15
-00001154                           186  
-00001154  FFFF FFFF                187      SIMHALT             ; halt simulator
-00001158                           188  
-00001158                           189  * Put variables and constants here
-00001158                           190  
-00001158                           191  *** ASCII constants used in the conversion loop. Subtract these from an ASCII character to get its
-00001158                           192  *** real hex value (depending on whether it's a digit or a character).
-00001158  =00000030                193  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
-00001158  =00000039                194  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
-00001158  =00000041                195  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
-00001158  =00000046                196  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
-00001158                           197  
-00001158                           198  *** Message strings
-00001158                           199      * Temporary; used for debugging and testing
-00001158= 00 0D 0A                 200  NEW_LINE        DC.B    '',0,CR,LF
-0000115B                           201      * Temporary; used for debugging and testing
-0000115B= 44 6F 6E 65 2E 00        202  DONE_MSG        DC.B    'Done.',0
-00001161                           203      * Temporary; used for debugging and testing
-00001161= 3A 20 00                 204  COLON_SPACE     DC.B    ': ',0
-00001164= 49 6E 76 61 6C 69 ...    205  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
-00001181= 49 6E 76 61 6C 69 ...    206  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-000011C4= 45 6E 74 65 72 20 ...    207  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
-000011E7= 45 6E 74 65 72 20 ...    208  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
-00001209= 49 20 61 6D 20 61 ...    209  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
-00001236= 00                       210  NULL_TERM       DC.B    '',0
-00001237  =0000000A                211  LF              EQU      $0A
-00001237  =0000000D                212  CR              EQU      $0D
-00001237                           213  
-00001238= 00000001                 214  buffer  DC.L    1
-0000123C                           215  
-0000123C  =00008000                216  DISM_CODE     EQU     $8000 * Where to write disassembled code
-0000123C                           217      
-0000123C  4E71                     218      NOP * Ensures that included file aligns on word boundary
-0000123E                           219  
-0000123E                           220  END_NOW
-0000123E  43F8 115B                221      LEA     DONE_MSG,A1
-00001242  103C 0001                222      MOVE.B  #1,D0
-00001246  4E4F                     223      TRAP    #15
-00001248                           224      *LEA     buffer,A1
-00001248                           225      
-00001248                           226      INCLUDE 'OP.X68'
-00001248                           227  
-00001248                           228  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
-00001248                           229  
-00001248                           230  OP_DECODE
-00001248  3A1E                     231      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
-0000124A                           232      * NOTE: A6 now points at either the next opcode or imm. data for EA part
-0000124A                           233      
-0000124A                           234      * is it NOP?
-0000124A  BA7C 4E71                235      CMP.W   #CODE_NOP,D5
-0000124E  6700 0230                236      BEQ     DO_NOP      * After execution of this branch, will return to I/O
-00001252                           237      
-00001252                           238      * is it RTS?
-00001252  BA7C 4E75                239      CMP.W   #CODE_RTS,D5
-00001256  6700 023A                240      BEQ     DO_RTS      * After execution of this branch, will return to I/O
-0000125A                           241      
-0000125A                           242      ** Not NOP or RTS, check bit-by-bit to narrow down
-0000125A                           243      
-0000125A  0805 000F                244      BTST.L  #15,D5       * Test the most significant bit of the command
-0000125E  6700 000C                245      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
-00001262  6000 00FA                246      BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
-00001266                           247     
-00001266  6000 0218                248      BRA     DO_NOP
-0000126A  4E75                     249      RTS * Return to I/O module (temporary; will go to EA module eventually)
-0000126C                           250      
-0000126C                           251  OXXX_BRA
-0000126C  0805 000E                252      BTST.L  #14,D5      * Test the second bit 
-00001270  6700 0006                253      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
-00001274  6000 0012                254      BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
-00001278                           255  
-00001278                           256  OOXX_BRA
-00001278  0805 000D                257      BTST.L  #13,D5          * Test the second bit 
-0000127C  6700 0016                258      BEQ     OOOX_BRA        * Branch to opcodes starting with 000
-00001280  6000 001E                259      BRA     OOIX_BRA        * Might be MOVE, MOVEA
-00001284  6000 0254                260      BRA     PRINT_INVALID_MSG
-00001288                           261  OIXX_BRA
-00001288  0805 000D                262      BTST.L  #13,D5
-0000128C  6700 008A                263      BEQ     OIOX_BRA            * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
-00001290  6000 0092                264      BRA     OIIX_BRA            * BCC, OR MOVEQ
-00001294                           265  OOOX_BRA
-00001294  0805 000C                266      BTST.L  #12,D5              * Test the second bit 
-00001298  6700 0012                267      BEQ     OOOO_BRA            * Decision for SUBI or ADDI
-0000129C  6000 0028                268      BRA     OOOI_BRA            * MOVE and MOVEA (B)
-000012A0                           269  OOIX_BRA
-000012A0  0805 000C                270      BTST.L  #12,D5              * Test the second bit 
-000012A4  6700 0032                271      BEQ     OOIO_BRA            * MOVE or MOVEA need to be handled here (W)
-000012A8  6000 004E                272      BRA     OOII_BRA            * MOVE or MOVEA need to be handled here (L)
-000012AC                           273  
-000012AC                           274  OOOO_BRA                        * tests for ADDI or SUBI
-000012AC  343C 0F00                275      MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
-000012B0  C445                     276      AND.W   D5,D2               * AND with current opcode data and store into D2
-000012B2  B47C 0600                277      CMP.W   #$0600,D2           * Result of mask should be 0060 if the code is ADDi
-000012B6  6700 0138                278      BEQ     DO_ADDI     
-000012BA  B47C 0400                279      CMP.W   #$0400,D2           * SUBI and ADDI  have the same bitmask.
-000012BE  6700 0178                280      BEQ     DO_SUBI
-000012C2  6000 0216                281      BRA     PRINT_INVALID_MSG
-000012C6                           282  OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
-000012C6  343C 3000                283      MOVE.W  #MOVE_MASK,D2
-000012CA  C445                     284      AND.W   D5,D2
-000012CC  B47C 1000                285      CMP.W   #$1000,D2           * is it a move byte?
-000012D0  6700 0090                286      BEQ     DO_MOVE_B           
-000012D4                           287  
-000012D4  6000 0204                288      BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
-000012D8                           289  OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
-000012D8  343C 31C0                290      MOVE.W  #MOVEA_MASK,D2
-000012DC  C445                     291      AND.W   D5,D2
-000012DE  B47C 2040                292      CMP.W   #$2040,D2           * is it a moveA word?
-000012E2  6700 0096                293      BEQ     DO_MOVEA_W          
-000012E6                           294  
-000012E6  343C 3000                295      MOVE.W  #MOVE_MASK,D2
-000012EA  C445                     296      AND.W   D5,D2
-000012EC  B47C 2000                297      CMP.W   #$2000,D2           * is it a move word?
-000012F0  6700 009A                298      BEQ     DO_MOVE_W           
-000012F4                           299  
-000012F4  6000 01E4                300      BRA     PRINT_INVALID_MSG
-000012F8                           301  OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
-000012F8  343C 31C0                302      MOVE.W  #MOVEA_MASK,D2
-000012FC  C445                     303      AND.W   D5,D2
-000012FE  B47C 3040                304      CMP.W   #$3040,D2           * is it a moveA long?
-00001302  6700 00A0                305      BEQ     DO_MOVEA_L          
-00001306                           306  
-00001306  343C 3000                307      MOVE.W  #MOVE_MASK,D2
-0000130A  C445                     308      AND.W   D5,D2
-0000130C  B47C 3000                309      CMP.W   #$3000,D2           * is it a move long?
-00001310  6700 00A4                310      BEQ     DO_MOVE_L           
-00001314                           311  
-00001314  6000 01C4                312      BRA     PRINT_INVALID_MSG
-00001318                           313  OIOX_BRA
-00001318  0805 000C                314      BTST.L  #12,D5
-0000131C  6700 0012                315      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
-00001320  6000 0128                316      BRA     DO_ADDQ     * ADDQ 
-00001324                           317  OIIX_BRA
-00001324                           318      *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
-00001324  0805 000C                319      BTST.L  #12,D5
-00001328  6700 00FC                320      BEQ     DO_Bcc            * BCC happens here, have to narrow it down to which one!
-0000132C  6000 0188                321      BRA     DO_MOVEQ   
-00001330                           322  OIOO_BRA
-00001330                           323      ** Test for JSR
-00001330  343C 0FC0                324      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
-00001334  C445                     325      AND.W   D5,D2        * AND with the current opcode data
-00001336  B47C 0E80                326      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
-0000133A  6700 018C                327      BEQ     DO_JSR       *
-0000133E                           328  
-0000133E  343C 0F00                329      MOVE.W  #CLR_MASK,D2
-00001342  C445                     330      AND.W   D5,D2
-00001344  B47C 0200                331      CMP.W   #$0200,D2              * IS IT CLR?
-00001348  6700 0112                332      BEQ     DO_CLR
-0000134C                           333  
-0000134C  343C 01C0                334      MOVE.W  #LEA_MASK,D2
-00001350  C445                     335      AND     D5,D2
-00001352  B47C 01C0                336      CMP.W   #$01C0,D2              *EQUAL TO LEA?
-00001356  6700 0116                337      BEQ.W   DO_LEA
-0000135A  6000 0190                338      BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
-0000135E                           339  
-0000135E                           340  IXXX_BRA
-0000135E  6000 019E                341      BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch
-00001362                           342      
-00001362                           343  DO_MOVE_B
-00001362  47F9 000015EA            344      LEA     S_MOVE_B,A3
-00001368  1E3C 002A                345      MOVE.B  #$2A,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
-0000136C  4EB9 00001510            346      JSR     WRITE
-00001372  4EB9 000016BC            347      JSR     MOVE_EA
-00001378  4E75                     348      RTS
-0000137A                           349  DO_MOVEA_W
-0000137A  47F9 000015FA            350      LEA     S_MOVEA_W,A3
-00001380  1E3C 003B                351      MOVE.B  #$3B,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
-00001384                           352      ** Eventually, EA Module will be called here
-00001384  4EB9 00001510            353      JSR     WRITE
-0000138A  4E75                     354      RTS
-0000138C                           355  DO_MOVE_W
-0000138C  47F9 0000160A            356      LEA     S_MOVE_W,A3
-00001392  1E3C 002B                357      MOVE.B  #$2B,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
-00001396  4EB9 00001510            358      JSR     WRITE
-0000139C  4EB9 000016BC            359      JSR     MOVE_EA
-000013A2  4E75                     360      RTS
-000013A4                           361  DO_MOVEA_L
-000013A4  47F9 0000161A            362      LEA     S_MOVEA_L,A3
-000013AA  1E3C 003C                363      MOVE.B  #$3C,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
-000013AE                           364      ** Eventually, EA Module will be called here
-000013AE  4EB9 00001510            365      JSR     WRITE
-000013B4  4E75                     366      RTS
-000013B6                           367  DO_MOVE_L
-000013B6  47F9 0000162A            368      LEA     S_MOVE_L,A3
-000013BC  1E3C 002C                369      MOVE.B  #$2C,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
-000013C0  4EB9 00001510            370      JSR     WRITE
-000013C6  4EB9 000016BC            371      JSR     MOVE_EA
-000013CC  4E75                     372      RTS
-000013CE                           373  
-000013CE                           374  DO_BCC_CASE
-000013CE  343C 0F00                375      MOVE.W  #Bcc_MASK,D2
-000013D2  C445                     376      AND     D5,D2
-000013D4  B47C 0E00                377      CMP.W   #$0E00,D2                * Is it BGT?
-000013D8  6700 0028                378      BEQ.W   DO_BGT
-000013DC                           379      
-000013DC  B47C 0F00                380      CMP.W   #$0F00,D2                * Is it BLE?
-000013E0  6700 0032                381      BEQ.W   DO_BLE
-000013E4                           382  
-000013E4  B47C 0400                383      CMP.W   #$0400,D2                * Is it BCC?
-000013E8  6700 003C                384      BEQ.W   DO_BCC
-000013EC                           385  
-000013EC  6000 00EC                386      BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
-000013F0                           387  
-000013F0                           388  DO_ADDI
-000013F0  47F9 0000156A            389      LEA     S_ADDI,A3
-000013F6  1E3C 0008                390      MOVE.B  #8,D7
-000013FA                           391      ** Eventually, EA Module will be called here
-000013FA  4EB9 00001510            392      JSR     WRITE
-00001400  4E75                     393      RTS
-00001402                           394  DO_BGT
-00001402  47F9 000015BA            395      LEA     S_BGT,A3
-00001408  1E3C 001A                396      MOVE.B  #26,D7
-0000140C                           397      ** Eventually, EA Module will be called here
-0000140C  4EB9 00001510            398      JSR     WRITE
-00001412  4E75                     399      RTS
-00001414                           400  DO_BLE
-00001414  47F9 000015CA            401      LEA     S_BLE,A3
-0000141A  1E3C 001B                402      MOVE.B  #27,D7
-0000141E                           403      ** Eventually, EA Module will be called here
-0000141E  4EB9 00001510            404      JSR     WRITE
-00001424  4E75                     405      RTS
-00001426                           406  DO_BCC
-00001426  47F9 000015DA            407      LEA     S_BCC,A3
-0000142C  1E3C 001C                408      MOVE.B  #28,D7
-00001430                           409      ** Eventually, EA Module will be called here
-00001430  4EB9 00001510            410      JSR     WRITE
-00001436  4E75                     411      RTS
-00001438                           412  DO_SUBI
-00001438  47F9 0000157A            413      LEA     S_SUBI,A3
-0000143E  1E3C 000B                414      MOVE.B  #11,D7
-00001442                           415      ** Eventually, EA Module will be called here
-00001442  4EB9 00001510            416      JSR     WRITE
-00001448  4E75                     417      RTS
-0000144A                           418  DO_ADDQ
-0000144A                           419      *Check for full opcode for 11 and onwards. if invalid, print the message
-0000144A  47F9 0000155A            420      LEA     S_ADDQ,A3
-00001450  1E3C 0009                421      MOVE.B  #9,D7
-00001454                           422      ** Eventually, EA Module will be called here
-00001454  4EB9 00001510            423      JSR     WRITE
-0000145A  4E75                     424      RTS
-0000145C                           425  DO_CLR
-0000145C  47F9 0000158A            426      LEA     S_CLR,A3
-00001462  1E3C 0010                427      MOVE.B  #16,D7
-00001466                           428      ** Eventually, EA Module will be called here
-00001466  4EB9 00001510            429      JSR     WRITE
-0000146C  4E75                     430      RTS
-0000146E                           431  DO_LEA
-0000146E  47F9 0000159A            432      LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
-00001474  1E3C 000F                433      MOVE.B  #15,D7       * Store key for op code for EA module
-00001478                           434      ** Eventually, EA Module will be called here
-00001478  4EB9 00001510            435      JSR     WRITE       * Jump to WRITE subroutine
-0000147E  4E75                     436      RTS                 * Return to I/O module 
-00001480                           437  DO_NOP
-00001480  47F9 0000151A            438      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-00001486  1E3C 0001                439      MOVE.B  #1,D7       * Store key for op code for EA module
-0000148A                           440      ** Eventually, EA Module will be called here
-0000148A  4EB9 00001510            441      JSR     WRITE       * Jump to WRITE subroutine
-00001490  4E75                     442      RTS                 * Return to I/O module 
-00001492                           443  DO_RTS
-00001492  47F9 0000152A            444      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-00001498  1E3C 001E                445      MOVE.B  #30,D7      * Store key for op code for EA module
-0000149C                           446      ** Eventually, EA Module will be called here
-0000149C  4EB9 00001510            447      JSR     WRITE       * Jump to WRITE subroutine
-000014A2  4E75                     448      RTS                 * Return to the I/O module bra op_decode  
-000014A4                           449  DO_MOVE
-000014A4  47F9 0000153A            450      LEA     S_MOVE,A3
-000014AA  1E3C 0002                451      MOVE.B  #2,D7
-000014AE                           452      ** Eventually, EA Module will be called here
-000014AE  4EB9 00001510            453      JSR     WRITE
-000014B4  4E75                     454      RTS
-000014B6                           455  DO_MOVEQ
-000014B6  47F9 000015AA            456      LEA     S_MOVEQ,A3
-000014BC  1E3C 0004                457      MOVE.B  #4,D7
-000014C0  4EB9 00001510            458      JSR     WRITE
-000014C6  4E75                     459      RTS
-000014C8                           460  DO_JSR
-000014C8  47F9 0000154A            461      LEA     S_JSR,A3
-000014CE  1E3C 001B                462      MOVE.B  #27,D7
-000014D2                           463      ** Eventually, NOCK will be called here
-000014D2  4EB9 00001510            464      JSR     WRITE
-000014D8  4E75                     465      RTS
-000014DA                           466  PRINT_INVALID_MSG
-000014DA  47F9 0000163A            467      LEA     INVALID,A3
-000014E0  1E3C 0000                468      MOVE.B  #0,D7
-000014E4                           469      ** Eventually, NOCK will be called here
-000014E4  4EB9 00001510            470      JSR     WRITE
-000014EA  4E75                     471      RTS
-000014EC                           472  PRINT_OIOO_ERROR
-000014EC  47F9 00001689            473      LEA     BAD_OIOO,A3
-000014F2  1E3C 0000                474      MOVE.B  #0,D7
-000014F6                           475      ** Eventually, NOCK will be called here
-000014F6  4EB9 00001510            476      JSR     WRITE
-000014FC  4E75                     477      RTS
-000014FE                           478  PRINT_COME_BACK_MSG
-000014FE  47F9 00001666            479      LEA     COMEBK,A3
-00001504  1E3C 0000                480      MOVE.B  #0,D7
-00001508                           481      ** Eventually, NOCK will be called here
-00001508  4EB9 00001510            482      JSR     WRITE
-0000150E  4E75                     483      RTS
-00001510                           484  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
-00001510                           485      *MOVEA.L A4,A1     * Save the position of A4 before writing (for I/0)
-00001510                           486  WRITE_LOOP
-00001510  18DB                     487      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
-00001512  0C13 0000                488      CMP.B   #0,(A3)         * Are we at the null terminator?
-00001516  66F8                     489      BNE     WRITE_LOOP      * If not, keep going
-00001518                           490      *MOVE.B  #$2C,(A4)+     * Write the null terminator before exiting
-00001518  4E75                     491      RTS                     * Executes once null terminator was reached
-0000151A                           492      
-0000151A                           493  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
-0000151A                           494  
-0000151A  =00004E71                495  CODE_NOP    EQU     $4E71
-0000151A  =00004E75                496  CODE_RTS    EQU     $4E75
-0000151A                           497  
-0000151A  =00002000                498  A4_PREV     SET     $2000
-0000151A                           499  
-0000151A= 4E 4F 50 20 20 20 ...    500  S_NOP       DC.B    'NOP            ',0
-0000152A= 52 54 53 20 20 20 ...    501  S_RTS       DC.B    'RTS            ',0
-0000153A= 4D 4F 56 45 20 20 ...    502  S_MOVE      DC.B    'MOVE           ',0
-0000154A= 4A 53 52 20 20 20 ...    503  S_JSR       DC.B    'JSR            ',0
-0000155A= 41 44 44 51 20 20 ...    504  S_ADDQ      DC.B    'ADDQ           ',0
-0000156A= 41 44 44 49 20 20 ...    505  S_ADDI      DC.B    'ADDI           ',0
-0000157A= 53 55 42 49 20 20 ...    506  S_SUBI      DC.B    'SUBI           ',0
-0000158A= 43 4C 52 20 20 20 ...    507  S_CLR       DC.B    'CLR            ',0
-0000159A= 4C 45 41 20 20 20 ...    508  S_LEA       DC.B    'LEA            ',0
-000015AA= 4D 4F 56 45 51 20 ...    509  S_MOVEQ     DC.B    'MOVEQ          ',0
-000015BA= 42 47 54 20 20 20 ...    510  S_BGT       DC.B    'BGT            ',0
-000015CA= 42 4C 45 20 20 20 ...    511  S_BLE       DC.B    'BLE            ',0
-000015DA= 42 43 43 20 20 20 ...    512  S_BCC       DC.B    'BCC            ',0
-000015EA= 4D 4F 56 45 2E 42 ...    513  S_MOVE_B    DC.B    'MOVE.B         ',0
-000015FA= 4D 4F 56 45 41 2E ...    514  S_MOVEA_W   DC.B    'MOVEA.W        ',0
-0000160A= 4D 4F 56 45 2E 57 ...    515  S_MOVE_W    DC.B    'MOVE.W         ',0
-0000161A= 4D 4F 56 45 41 2E ...    516  S_MOVEA_L   DC.B    'MOVEA.L        ',0
-0000162A= 4D 4F 56 45 2E 4C ...    517  S_MOVE_L    DC.B    'MOVE.L         ',0
-0000163A                           518  
-0000163A                           519  
-0000163A= 49 4E 56 41 4C 49 ...    520  INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
-00001666= 43 6F 6D 65 20 62 ...    521  COMEBK      DC.B    'Come back to me pls dont forget me',0 
-00001689= 42 61 64 20 4F 49 ...    522  BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
-000016B9                           523  
-000016B9  =00000FC0                524  JSR_MASK        EQU     %0000111111000000
-000016B9  =00000F00                525  ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
-000016B9  =00000000                526  BYTE_MASK       EQU     %0000000000000000       * Not sure if this is needed
-000016B9  =00000040                527  WORD_MASK       EQU     %0000000001000000       * not sure if this is needed
-000016B9  =00000080                528  LONG_MASK       EQU     %0000000010000000       * not sure if this is needed
-000016B9  =00000F00                529  CLR_MASK        EQU     %0000111100000000
-000016B9  =000001C0                530  LEA_MASK        EQU     %0000000111000000
-000016B9  =00000F00                531  Bcc_MASK        EQU     %0000111100000000
-000016B9                           532  
-000016B9  =000031C0                533  MOVEA_MASK      EQU     %0011000111000000
-000016B9  =00003000                534  MOVE_MASK       EQU     %0011000000000000
-000016B9                           535  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-000016B9                           536  
-000016B9                           537  
-000016B9                           538  
-000016B9                           539  -------------------- end include --------------------
-000016B9                           540      
-000016BA  4E71                     541      NOP * Ensures that included file aligns on word boundary
-000016BC                           542      
-000016BC                           543      INCLUDE 'EA.X68'
-000016BC                           544  
-000016BC                           545  
-000016BC                           546  ;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
-000016BC                           547  
-000016BC                           548  ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
-000016BC                           549  
-000016BC                           550  
-000016BC                           551  
-000016BC                           552  
-000016BC                           553  
-000016BC                           554  ;; PROBABLY REMOVE THIS WRITE SR
-000016BC                           555  
-000016BC                           556  MOVE_EA
-000016BC                           557  
-000016BC                           558  ;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
-000016BC                           559      * 1.) Mask 3 LSB into D6 (reg #)
-000016BC                           560      * 2.) ROR 3 bits
-000016BC                           561      * 3.) Mask 3 LSB into D0 (mode #)
-000016BC                           562      * 4.) Call mode-specific buffer writer (DO_MODE -> write_mode_x)
-000016BC                           563  ;; NOTES: there will be one mode-specific buffer writer for each mode.
-000016BC                           564  ;; The routine will write mode-specific strings to the buffer in addition to
-000016BC                           565  ;; the register number (converted to ASCII). Use A3 and A4 to do this.
-000016BC                           566      * 5.) Write a comma
-000016BC                           567      * 6.) ROR 3 bits
-000016BC                           568      * 7.) Mask 3 LSB into D0 (mode #)
-000016BC                           569      * 8.) ROR 3 bits
-000016BC                           570      * 9.) Mask 3 LSB into D6 (reg #)
-000016BC                           571      * 10.) Call mode-specific buffer writer
-000016BC                           572      * 11.) Return to I/O module
-000016BC                           573      
-000016BC                           574  
-000016BC  2C05                     575      MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
-000016BE  CC7C 0007                576      AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
-000016C2  E65D                     577      ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
-000016C4  2005                     578      MOVE.L  D5,D0               * D0 will hold the mode
-000016C6  C07C 0007                579      AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
-000016CA  4EB9 000016EC            580      JSR     DO_MODE             * Get source mode decoded and written to buffer
-000016D0                           581      
-000016D0                           582      ** CURRENT BUFFER STATE: MOVE.x         Xn
-000016D0                           583      
-000016D0  18FC 002C                584      MOVE.B  #',',(A4)+           * Write the comma between EA modes
-000016D4  E65D                     585      ROR.W   #3,D5               * dest mode is now 3 LSB of D5
-000016D6  2005                     586      MOVE.L  D5,D0               * Copy new rotated word into D0 for masking
-000016D8  C07C 0007                587      AND.W   #THREE_LSB_MASK,D0  * D0 now holds dest mode code
-000016DC  E65D                     588      ROR.W   #3,D5               * source register is now 3 LSB of D5
-000016DE  2C05                     589      MOVE.L  D5,D6               * Copy new rotated word into D6 for masking
-000016E0  CC7C 0007                590      AND.W   #THREE_LSB_MASK,D6  * mask source register into D6
-000016E4  4EB9 000016EC            591      JSR     DO_MODE             * Get dest mode decoded and written to buffer
-000016EA                           592      
-000016EA                           593      ** FINAL BUFFER STATE: MOVE.x         Xn,Xn
-000016EA                           594      
-000016EA  4E75                     595      RTS
-000016EC                           596      
-000016EC                           597      
-000016EC                           598      
-000016EC                           599  ;; Finds the mode stored in D6 and branches to appropriate SR to write to the buffer
-000016EC                           600  DO_MODE
-000016EC  B03C 0000                601      CMP.B   #00,D0      ** Mode 0 - Data Register Direct
-000016F0  6700 0024                602      BEQ     DR_DIRECT
-000016F4                           603      
-000016F4  B03C 0001                604      CMP.B   #01,D0      ** Mode 1 - Address Register Direct
-000016F8  6700 0028                605      BEQ     AR_DIRECT   
-000016FC                           606      
-000016FC  B03C 0002                607      CMP.B   #02,D0      ** Mode 2 - Address Register Indirect
-00001700  6700 0020                608      BEQ     AR_INDIRECT
-00001704                           609      
-00001704  B03C 0003                610      CMP.B   #03,D0      ** Mode 3 - Address Register Indirect w/ Post-increment
-00001708  6700 0018                611      BEQ     AR_POSTINC
-0000170C                           612      
-0000170C  B03C 0004                613      CMP.B   #04,D0      ** Mode 4 - Address Register Indirect w/ Pre-decrement
-00001710  6700 0010                614      BEQ     AR_PREDEC
-00001714                           615      
-00001714                           616      ** HERE: check for non-required EA modes (101, 110, 111 w/ 010 in Xn, 111 w/ 011 in Xn)
-00001714                           617      ** if found, branch to "unsupported EA mode" branch
-00001714                           618      
-00001714  4E75                     619      RTS
-00001716                           620  
-00001716                           621  
-00001716                           622  DR_DIRECT   *** Mode 0
-00001716  18FC 0044                623      MOVE.B  #'D',(A4)+   * Write D to the buffer
-0000171A  0606 0030                624      ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
-0000171E  18C6                     625      MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
-00001720  4E75                     626      RTS
-00001722                           627  
-00001722                           628  AR_DIRECT   *** Mode 1
-00001722                           629      
-00001722                           630  
-00001722                           631  AR_INDIRECT *** Mode 2
-00001722                           632      * WRITE (A
-00001722                           633      * WRITE NUMBER IN D6
-00001722                           634      * WRITE )
-00001722                           635  
-00001722                           636  AR_POSTINC  *** Mode 3
-00001722                           637      * WRITE (A
-00001722                           638      * WRITE NUMBER IN D6
-00001722                           639      * WRITE )+
-00001722                           640      
-00001722                           641  AR_PREDEC   *** Mode 4
-00001722                           642      * WRITE -(A
-00001722                           643      * WRITE NUMBER IN D6
-00001722                           644      * WRITE )
-00001722                           645  
-00001722                           646  IMM_DATA
-00001722                           647      * HOW TO DO THIS?
-00001722                           648  
-00001722                           649  ABS_LONG
-00001722                           650      * GET LONG FROM (A6)+
-00001722                           651      * WRITE $
-00001722                           652      * WRITE DATA GOT FROM A6
-00001722                           653  
-00001722                           654  ABS_WORD
-00001722                           655      * GET WORD FROM (A6)+
-00001722                           656      * WRITE $
-00001722                           657      * WRITE DATA GOT FROM A6
-00001722                           658      
-00001722                           659  
-00001722  =00000007                660  THREE_LSB_MASK  EQU     %0000000000000111
-00001722                           661  
-00001722                           662  ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
-00001722                           663  
-00001722                           664      END    START        ; last line of source
-00001722                           665  -------------------- end include --------------------
+00001000                            11  
+00001000                            12      ; A4 will point at where we write disassembled code (use to write ASCII)
+00001000  287C 00008000             13      MOVEA.L #DISM_CODE,A4
+00001006                            14      
+00001006                            15      ; Print the input prompt message and get input as a string from user
+00001006  43F9 0000115F             16      LEA     ADDR_PRMPT_STRT,A1
+0000100C  103C 000E                 17      MOVE.B  #14,D0
+00001010  4E4F                      18      TRAP    #15
+00001012  103C 0002                 19      MOVE.B  #2,D0           * get starting address from the user as a string
+00001016  4E4F                      20      TRAP    #15         
+00001018                            21      
+00001018                            22      ; Check if D1 is valid size, minimum 4 (user entered at least 4 hexa bits)
+00001018  B27C 0004                 23      CMP     #4,D1           * minimum of a word for the address
+0000101C  6D00 008E                 24      BLT     ERROR_INV_INP   * branch to print the invalid input error msg
+00001020  4EB9 00001058             25      JSR     CONVERSION_LOOP * convert the starting address from ASCII to hex
+00001026                            26  
+00001026                            27      ; Starting address has been converted; store it in A6 and get end address
+00001026  2C42                      28      MOVEA.L D2,A6           * A6 acts as iterator while disassembling
+00001028  4282                      29      CLR.L   D2              * prepare D2 to hold converted end address
+0000102A  4284                      30      CLR.L   D4              * clear D4 to start the counter at 0 again
+0000102C  43F9 00001182             31      LEA     ADDR_PRMPT_END,A1
+00001032  103C 000E                 32      MOVE.B  #14,D0          * prompt user to enter end address
+00001036  4E4F                      33      TRAP    #15
+00001038                            34      
+00001038  103C 0002                 35      MOVE.B  #2,D0           * get end address from user as a string
+0000103C  4E4F                      36      TRAP    #15
+0000103E                            37      
+0000103E                            38      ; Check if D1 is valid size, minimum 4 (user entered at least 4 hexa bits)
+0000103E  B27C 0004                 39      CMP     #4,D1           * minimum of a word for the address
+00001042  6D00 0068                 40      BLT     ERROR_INV_INP   * branch to print the invalid input error msg
+00001046  4EB9 00001058             41      JSR     CONVERSION_LOOP * convert the ending address
+0000104C                            42      
+0000104C                            43      ; Ending address has been converted; store it in A5
+0000104C  2A42                      44      MOVEA.L D2,A5           * compare A6 to A5 to know when to stop
+0000104E  BDCD                      45      CMPA.L  A5,A6           * check beginning address >= end address
+00001050  6C00 006A                 46      BGE     ERROR_END_LTE_BEG
+00001054  6000 0076                 47      BRA     MAIN_LOOP       * if all error checks pass, start main loop
+00001058                            48      
+00001058                            49  
+00001058                            50  
+00001058                            51  
+00001058                            52  
+00001058                            53  ;; ~~~~~~~~BEGINNING OF CONVERSION SUBROUTINE~~~~~~~~
+00001058                            54  CONVERSION_LOOP       
+00001058  1619                      55      MOVE.B  (A1)+,D3        * Store the next byte to convert in D3
+0000105A                            56  
+0000105A                            57  CHECK_NUM_MIN     ;; Checks if number is >= 30 (0) in ASCII
+0000105A  B67C 0030                 58      CMP     #ASC_NUM_MIN,D3 * Range of ASCII numbers: [2F,3A] then subtract 30
+0000105E  6C00 0006                 59      BGE     CHECK_NUM_MAX   * check if it's in range for x > 2F
+00001062  6000 0048                 60      BRA     ERROR_INV_INP   * First condition not met, go to bad input error 
+00001066                            61      
+00001066                            62  CHECK_NUM_MAX     ;; Checks if number is <= 39 (9) in ASCII
+00001066  B67C 0039                 63      CMP     #ASC_NUM_MAX,D3
+0000106A  6F00 0020                 64      BLE     ASC_TO_NUM      * If condition for the range was met, do the math
+0000106E  4EF9 00001074             65      JMP     CHECK_CHAR_MIN  * Second condition not met, check if a character
+00001074                            66      
+00001074                            67  CHECK_CHAR_MIN    ;; Checks if number is >= 41 (A) in ASCII
+00001074  B67C 0041                 68      CMP     #ASC_CHAR_MIN,D3
+00001078  6C00 0006                 69      BGE     CHECK_CHAR_MAX  
+0000107C  6000 002E                 70      BRA     ERROR_INV_INP   * First condition not met, go to bad input error
+00001080                            71      
+00001080                            72  CHECK_CHAR_MAX    ;; Checks if number is <= 46 (F) in ASCII
+00001080  B67C 0046                 73      CMP     #ASC_CHAR_MAX,D3
+00001084  6F00 0010                 74      BLE     ASC_TO_CHAR     * Condition was met for A-F
+00001088  6000 0022                 75      BRA     ERROR_INV_INP   * Greater than 46 = out of 16-bit system
+0000108C                            76      
+0000108C                            77  ASC_TO_NUM        ;; Converts a string digit into a hex value
+0000108C  0403 0030                 78      SUBI.B  #$30,D3
+00001090  4EF9 000010A0             79      JMP     SHIFTS          * After routine is finished, complete shifts/adds
+00001096                            80      
+00001096                            81  ASC_TO_CHAR       ;; Converts a string character into a hex value
+00001096  0403 0037                 82      SUBI.B  #$37,D3    
+0000109A  4EF9 000010A0             83      JMP     SHIFTS
+000010A0                            84      
+000010A0                            85  SHIFTS            ;; Shifts D2 left to make room for converted hexabit
+000010A0  E98A                      86      LSL.L   #4,D2           * shift hexabit left to make room
+000010A2  D403                      87      ADD.B   D3,D2           * Add modified value from D3 into D2.
+000010A4                            88      
+000010A4  5204                      89      ADD.B   #1,D4           * Increment counter by 1
+000010A6  B244                      90      CMP     D4,D1           * Check if end of input reached (D4 = counter)
+000010A8  66AE                      91      BNE     CONVERSION_LOOP * Continue back to the loop if D4 != D1  
+000010AA  4E75                      92      RTS
+000010AC                            93  ;; ~~~~~~~~END OF CONVERSION SUBROUTINE~~~~~~~~
+000010AC                            94  
+000010AC                            95  
+000010AC                            96  
+000010AC                            97  ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
+000010AC  43F9 000010FF             98      LEA     INVALID_INPUT,A1
+000010B2  103C 000D                 99      MOVE.B  #13,D0
+000010B6  4E4F                     100      TRAP    #15
+000010B8  6000 011A                101      BRA     END_NOW
+000010BC                           102      
+000010BC                           103  ERROR_END_LTE_BEG ;; Prints END_LTE_BEG (end <= beginning) error to console.
+000010BC  43F9 0000111C            104      LEA     END_LTE_BEG,A1
+000010C2  103C 000D                105      MOVE.B  #13,D0
+000010C6  4E4F                     106      TRAP    #15
+000010C8  6000 010A                107      BRA     END_NOW
+000010CC                           108    
+000010CC                           109    
+000010CC                           110    
+000010CC                           111  ; Main loop of the program; Checks if the iterator (A6) is past the ending 
+000010CC                           112  ; address (A5). If not, calls the OP module. Once the OP and EA modules have
+000010CC                           113  ; finished, they return to this module, which then places a null terminator
+000010CC                           114  ; on the buffer. This is necessary because OP and EA modules do not write a 
+000010CC                           115  ; null terminator to the buffer, but trap task 13 needs one to know when to
+000010CC                           116  ; stop printing. After the line is printed, A4 is copied into A1 to start 
+000010CC                           117  ; printing from the next spot in memory where the buffer (A4) writes to.
+000010CC                           118  MAIN_LOOP
+000010CC  BDCD                     119      CMPA.L  A5,A6
+000010CE  6C00 0104                120      BGE     END_NOW     * End program if iterator is at or past A5 (end addr)
+000010D2  4EB9 000011DE            121      JSR     OP_DECODE   * Call the OP module, which will read next word
+000010D8  18FC 0000                122      MOVE.B  #$00,(A4)+  * Write null term at end of freshly decoded line
+000010DC  103C 000D                123      MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
+000010E0  4E4F                     124      TRAP    #15
+000010E2  224C                     125      MOVEA.L A4,A1       * Set A1 to point at beginning of next decoded line
+000010E4                           126      ;;; NICK -- I think you could put logic for printing 10 at a time here.
+000010E4  60E6                     127      BRA     MAIN_LOOP
+000010E6                           128      
+000010E6                           129      * Once the loop exits, print a farewell message to the console.
+000010E6  43F9 000010F9            130      LEA     DONE_MSG,A1
+000010EC  103C 000D                131      MOVE.B  #13,D0
+000010F0  4E4F                     132      TRAP    #15
+000010F2                           133  
+000010F2  FFFF FFFF                134      SIMHALT             ; halt simulator
+000010F6                           135  
+000010F6                           136  
+000010F6                           137  * Put variables and constants here
+000010F6                           138  
+000010F6                           139  ; ASCII constants used in the conversion loop. Subtract these from an ASCII
+000010F6                           140  ; character to get the raw hex value (depending on whether digit or a char).
+000010F6  =00000030                141  ASC_NUM_MIN     EQU     $30     * ASCII key for 0
+000010F6  =00000039                142  ASC_NUM_MAX     EQU     $39     * ASCII key for 9
+000010F6  =00000041                143  ASC_CHAR_MIN    EQU     $41     * ASCII key for A
+000010F6  =00000046                144  ASC_CHAR_MAX    EQU     $46     * ASCII key for F
+000010F6                           145  
+000010F6                           146  ; Message strings
+000010F6= 00 0D 0A                 147  NEW_LINE        DC.B    '',0,CR,LF
+000010F9= 44 6F 6E 65 2E 00        148  DONE_MSG        DC.B    'Done.',0
+000010FF= 49 6E 76 61 6C 69 ...    149  INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
+0000111C= 49 6E 76 61 6C 69 ...    150  END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
+0000115F= 45 6E 74 65 72 20 ...    151  ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+00001182= 45 6E 74 65 72 20 ...    152  ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
+000011A4= 49 20 61 6D 20 61 ...    153  PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+000011D1  =0000000A                154  LF              EQU      $0A
+000011D1  =0000000D                155  CR              EQU      $0D
+000011D1                           156  
+000011D1  =00008000                157  DISM_CODE     EQU     $8000     * Where to write disassembled code
+000011D1                           158      
+000011D2  4E71                     159      NOP                         * Ensures included files align on word boundary
+000011D4                           160  
+000011D4                           161  END_NOW
+000011D4  43F8 10F9                162      LEA     DONE_MSG,A1
+000011D8  103C 0001                163      MOVE.B  #1,D0
+000011DC  4E4F                     164      TRAP    #15
+000011DE                           165      
+000011DE                           166  
+000011DE                           167      
+000011DE                           168      INCLUDE 'OP.X68'
+000011DE                           169  
+000011DE                           170  ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
+000011DE                           171  
+000011DE                           172  OP_DECODE
+000011DE  3A1E                     173      MOVE.W  (A6)+,D5     * Load the next opcode to decode into D5, incrementing
+000011E0                           174      * NOTE: A6 now points at either the next opcode or imm. data for EA part
+000011E0                           175      
+000011E0                           176      * is it NOP?
+000011E0  BA7C 4E71                177      CMP.W   #CODE_NOP,D5
+000011E4  6700 0230                178      BEQ     DO_NOP      * After execution of this branch, will return to I/O
+000011E8                           179      
+000011E8                           180      * is it RTS?
+000011E8  BA7C 4E75                181      CMP.W   #CODE_RTS,D5
+000011EC  6700 023A                182      BEQ     DO_RTS      * After execution of this branch, will return to I/O
+000011F0                           183      
+000011F0                           184      ** Not NOP or RTS, check bit-by-bit to narrow down
+000011F0                           185      
+000011F0  0805 000F                186      BTST.L  #15,D5       * Test the most significant bit of the command
+000011F4  6700 000C                187      BEQ     OXXX_BRA     * Branch to opcodes starting with zero     
+000011F8  6000 00FA                188      BRA     IXXX_BRA     * Branch to opcodes starting with a one  ******** COME BAK
+000011FC                           189     
+000011FC  6000 0218                190      BRA     DO_NOP
+00001200  4E75                     191      RTS * Return to I/O module (temporary; will go to EA module eventually)
+00001202                           192      
+00001202                           193  OXXX_BRA
+00001202  0805 000E                194      BTST.L  #14,D5      * Test the second bit 
+00001206  6700 0006                195      BEQ     OOXX_BRA    * Branch to opcodes starting with 00
+0000120A  6000 0012                196      BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
+0000120E                           197  
+0000120E                           198  OOXX_BRA
+0000120E  0805 000D                199      BTST.L  #13,D5          * Test the second bit 
+00001212  6700 0016                200      BEQ     OOOX_BRA        * Branch to opcodes starting with 000
+00001216  6000 001E                201      BRA     OOIX_BRA        * Might be MOVE, MOVEA
+0000121A  6000 0254                202      BRA     PRINT_INVALID_MSG
+0000121E                           203  OIXX_BRA
+0000121E  0805 000D                204      BTST.L  #13,D5
+00001222  6700 008A                205      BEQ     OIOX_BRA            * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
+00001226  6000 0092                206      BRA     OIIX_BRA            * BCC, OR MOVEQ
+0000122A                           207  OOOX_BRA
+0000122A  0805 000C                208      BTST.L  #12,D5              * Test the second bit 
+0000122E  6700 0012                209      BEQ     OOOO_BRA            * Decision for SUBI or ADDI
+00001232  6000 0028                210      BRA     OOOI_BRA            * MOVE and MOVEA (B)
+00001236                           211  OOIX_BRA
+00001236  0805 000C                212      BTST.L  #12,D5              * Test the second bit 
+0000123A  6700 0032                213      BEQ     OOIO_BRA            * MOVE or MOVEA need to be handled here (W)
+0000123E  6000 004E                214      BRA     OOII_BRA            * MOVE or MOVEA need to be handled here (L)
+00001242                           215  
+00001242                           216  OOOO_BRA                        * tests for ADDI or SUBI
+00001242  343C 0F00                217      MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
+00001246  C445                     218      AND.W   D5,D2               * AND with current opcode data and store into D2
+00001248  B47C 0600                219      CMP.W   #$0600,D2           * Result of mask should be 0060 if the code is ADDi
+0000124C  6700 0138                220      BEQ     DO_ADDI     
+00001250  B47C 0400                221      CMP.W   #$0400,D2           * SUBI and ADDI  have the same bitmask.
+00001254  6700 0178                222      BEQ     DO_SUBI
+00001258  6000 0216                223      BRA     PRINT_INVALID_MSG
+0000125C                           224  OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
+0000125C  343C 3000                225      MOVE.W  #MOVE_MASK,D2
+00001260  C445                     226      AND.W   D5,D2
+00001262  B47C 1000                227      CMP.W   #$1000,D2           * is it a move byte?
+00001266  6700 0090                228      BEQ     DO_MOVE_B           
+0000126A                           229  
+0000126A  6000 0204                230      BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
+0000126E                           231  OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
+0000126E  343C 31C0                232      MOVE.W  #MOVEA_MASK,D2
+00001272  C445                     233      AND.W   D5,D2
+00001274  B47C 2040                234      CMP.W   #$2040,D2           * is it a moveA word?
+00001278  6700 0096                235      BEQ     DO_MOVEA_W          
+0000127C                           236  
+0000127C  343C 3000                237      MOVE.W  #MOVE_MASK,D2
+00001280  C445                     238      AND.W   D5,D2
+00001282  B47C 2000                239      CMP.W   #$2000,D2           * is it a move word?
+00001286  6700 009A                240      BEQ     DO_MOVE_W           
+0000128A                           241  
+0000128A  6000 01E4                242      BRA     PRINT_INVALID_MSG
+0000128E                           243  OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
+0000128E  343C 31C0                244      MOVE.W  #MOVEA_MASK,D2
+00001292  C445                     245      AND.W   D5,D2
+00001294  B47C 3040                246      CMP.W   #$3040,D2           * is it a moveA long?
+00001298  6700 00A0                247      BEQ     DO_MOVEA_L          
+0000129C                           248  
+0000129C  343C 3000                249      MOVE.W  #MOVE_MASK,D2
+000012A0  C445                     250      AND.W   D5,D2
+000012A2  B47C 3000                251      CMP.W   #$3000,D2           * is it a move long?
+000012A6  6700 00A4                252      BEQ     DO_MOVE_L           
+000012AA                           253  
+000012AA  6000 01C4                254      BRA     PRINT_INVALID_MSG
+000012AE                           255  OIOX_BRA
+000012AE  0805 000C                256      BTST.L  #12,D5
+000012B2  6700 0012                257      BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
+000012B6  6000 0128                258      BRA     DO_ADDQ     * ADDQ 
+000012BA                           259  OIIX_BRA
+000012BA                           260      *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
+000012BA  0805 000C                261      BTST.L  #12,D5
+000012BE  6700 00FC                262      BEQ     DO_Bcc            * BCC happens here, have to narrow it down to which one!
+000012C2  6000 0188                263      BRA     DO_MOVEQ   
+000012C6                           264  OIOO_BRA
+000012C6                           265      ** Test for JSR
+000012C6  343C 0FC0                266      MOVE.W  #JSR_MASK,D2 * Load mask temporarily into register for ANDing
+000012CA  C445                     267      AND.W   D5,D2        * AND with the current opcode data
+000012CC  B47C 0E80                268      CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
+000012D0  6700 018C                269      BEQ     DO_JSR       *
+000012D4                           270  
+000012D4  343C 0F00                271      MOVE.W  #CLR_MASK,D2
+000012D8  C445                     272      AND.W   D5,D2
+000012DA  B47C 0200                273      CMP.W   #$0200,D2              * IS IT CLR?
+000012DE  6700 0112                274      BEQ     DO_CLR
+000012E2                           275  
+000012E2  343C 01C0                276      MOVE.W  #LEA_MASK,D2
+000012E6  C445                     277      AND     D5,D2
+000012E8  B47C 01C0                278      CMP.W   #$01C0,D2              *EQUAL TO LEA?
+000012EC  6700 0116                279      BEQ.W   DO_LEA
+000012F0  6000 0190                280      BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
+000012F4                           281  
+000012F4                           282  IXXX_BRA
+000012F4  6000 019E                283      BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch
+000012F8                           284      
+000012F8                           285  DO_MOVE_B
+000012F8  47F9 00001580            286      LEA     S_MOVE_B,A3
+000012FE  1E3C 002A                287      MOVE.B  #$2A,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+00001302  4EB9 000014A6            288      JSR     WRITE
+00001308  4EB9 00001652            289      JSR     MOVE_EA
+0000130E  4E75                     290      RTS
+00001310                           291  DO_MOVEA_W
+00001310  47F9 00001590            292      LEA     S_MOVEA_W,A3
+00001316  1E3C 003B                293      MOVE.B  #$3B,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
+0000131A                           294      ** Eventually, EA Module will be called here
+0000131A  4EB9 000014A6            295      JSR     WRITE
+00001320  4E75                     296      RTS
+00001322                           297  DO_MOVE_W
+00001322  47F9 000015A0            298      LEA     S_MOVE_W,A3
+00001328  1E3C 002B                299      MOVE.B  #$2B,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
+0000132C  4EB9 000014A6            300      JSR     WRITE
+00001332  4EB9 00001652            301      JSR     MOVE_EA
+00001338  4E75                     302      RTS
+0000133A                           303  DO_MOVEA_L
+0000133A  47F9 000015B0            304      LEA     S_MOVEA_L,A3
+00001340  1E3C 003C                305      MOVE.B  #$3C,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
+00001344                           306      ** Eventually, EA Module will be called here
+00001344  4EB9 000014A6            307      JSR     WRITE
+0000134A  4E75                     308      RTS
+0000134C                           309  DO_MOVE_L
+0000134C  47F9 000015C0            310      LEA     S_MOVE_L,A3
+00001352  1E3C 002C                311      MOVE.B  #$2C,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+00001356  4EB9 000014A6            312      JSR     WRITE
+0000135C  4EB9 00001652            313      JSR     MOVE_EA
+00001362  4E75                     314      RTS
+00001364                           315  
+00001364                           316  DO_BCC_CASE
+00001364  343C 0F00                317      MOVE.W  #Bcc_MASK,D2
+00001368  C445                     318      AND     D5,D2
+0000136A  B47C 0E00                319      CMP.W   #$0E00,D2                * Is it BGT?
+0000136E  6700 0028                320      BEQ.W   DO_BGT
+00001372                           321      
+00001372  B47C 0F00                322      CMP.W   #$0F00,D2                * Is it BLE?
+00001376  6700 0032                323      BEQ.W   DO_BLE
+0000137A                           324  
+0000137A  B47C 0400                325      CMP.W   #$0400,D2                * Is it BCC?
+0000137E  6700 003C                326      BEQ.W   DO_BCC
+00001382                           327  
+00001382  6000 00EC                328      BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
+00001386                           329  
+00001386                           330  DO_ADDI
+00001386  47F9 00001500            331      LEA     S_ADDI,A3
+0000138C  1E3C 0008                332      MOVE.B  #8,D7
+00001390                           333      ** Eventually, EA Module will be called here
+00001390  4EB9 000014A6            334      JSR     WRITE
+00001396  4E75                     335      RTS
+00001398                           336  DO_BGT
+00001398  47F9 00001550            337      LEA     S_BGT,A3
+0000139E  1E3C 001A                338      MOVE.B  #26,D7
+000013A2                           339      ** Eventually, EA Module will be called here
+000013A2  4EB9 000014A6            340      JSR     WRITE
+000013A8  4E75                     341      RTS
+000013AA                           342  DO_BLE
+000013AA  47F9 00001560            343      LEA     S_BLE,A3
+000013B0  1E3C 001B                344      MOVE.B  #27,D7
+000013B4                           345      ** Eventually, EA Module will be called here
+000013B4  4EB9 000014A6            346      JSR     WRITE
+000013BA  4E75                     347      RTS
+000013BC                           348  DO_BCC
+000013BC  47F9 00001570            349      LEA     S_BCC,A3
+000013C2  1E3C 001C                350      MOVE.B  #28,D7
+000013C6                           351      ** Eventually, EA Module will be called here
+000013C6  4EB9 000014A6            352      JSR     WRITE
+000013CC  4E75                     353      RTS
+000013CE                           354  DO_SUBI
+000013CE  47F9 00001510            355      LEA     S_SUBI,A3
+000013D4  1E3C 000B                356      MOVE.B  #11,D7
+000013D8                           357      ** Eventually, EA Module will be called here
+000013D8  4EB9 000014A6            358      JSR     WRITE
+000013DE  4E75                     359      RTS
+000013E0                           360  DO_ADDQ
+000013E0                           361      *Check for full opcode for 11 and onwards. if invalid, print the message
+000013E0  47F9 000014F0            362      LEA     S_ADDQ,A3
+000013E6  1E3C 0009                363      MOVE.B  #9,D7
+000013EA                           364      ** Eventually, EA Module will be called here
+000013EA  4EB9 000014A6            365      JSR     WRITE
+000013F0  4E75                     366      RTS
+000013F2                           367  DO_CLR
+000013F2  47F9 00001520            368      LEA     S_CLR,A3
+000013F8  1E3C 0010                369      MOVE.B  #16,D7
+000013FC                           370      ** Eventually, EA Module will be called here
+000013FC  4EB9 000014A6            371      JSR     WRITE
+00001402  4E75                     372      RTS
+00001404                           373  DO_LEA
+00001404  47F9 00001530            374      LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
+0000140A  1E3C 000F                375      MOVE.B  #15,D7       * Store key for op code for EA module
+0000140E                           376      ** Eventually, EA Module will be called here
+0000140E  4EB9 000014A6            377      JSR     WRITE       * Jump to WRITE subroutine
+00001414  4E75                     378      RTS                 * Return to I/O module 
+00001416                           379  DO_NOP
+00001416  47F9 000014B0            380      LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+0000141C  1E3C 0001                381      MOVE.B  #1,D7       * Store key for op code for EA module
+00001420                           382      ** Eventually, EA Module will be called here
+00001420  4EB9 000014A6            383      JSR     WRITE       * Jump to WRITE subroutine
+00001426  4E75                     384      RTS                 * Return to I/O module 
+00001428                           385  DO_RTS
+00001428  47F9 000014C0            386      LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+0000142E  1E3C 001E                387      MOVE.B  #30,D7      * Store key for op code for EA module
+00001432                           388      ** Eventually, EA Module will be called here
+00001432  4EB9 000014A6            389      JSR     WRITE       * Jump to WRITE subroutine
+00001438  4E75                     390      RTS                 * Return to the I/O module bra op_decode  
+0000143A                           391  DO_MOVE
+0000143A  47F9 000014D0            392      LEA     S_MOVE,A3
+00001440  1E3C 0002                393      MOVE.B  #2,D7
+00001444                           394      ** Eventually, EA Module will be called here
+00001444  4EB9 000014A6            395      JSR     WRITE
+0000144A  4E75                     396      RTS
+0000144C                           397  DO_MOVEQ
+0000144C  47F9 00001540            398      LEA     S_MOVEQ,A3
+00001452  1E3C 0004                399      MOVE.B  #4,D7
+00001456  4EB9 000014A6            400      JSR     WRITE
+0000145C  4E75                     401      RTS
+0000145E                           402  DO_JSR
+0000145E  47F9 000014E0            403      LEA     S_JSR,A3
+00001464  1E3C 001B                404      MOVE.B  #27,D7
+00001468                           405      ** Eventually, NOCK will be called here
+00001468  4EB9 000014A6            406      JSR     WRITE
+0000146E  4E75                     407      RTS
+00001470                           408  PRINT_INVALID_MSG
+00001470  47F9 000015D0            409      LEA     INVALID,A3
+00001476  1E3C 0000                410      MOVE.B  #0,D7
+0000147A                           411      ** Eventually, NOCK will be called here
+0000147A  4EB9 000014A6            412      JSR     WRITE
+00001480  4E75                     413      RTS
+00001482                           414  PRINT_OIOO_ERROR
+00001482  47F9 0000161F            415      LEA     BAD_OIOO,A3
+00001488  1E3C 0000                416      MOVE.B  #0,D7
+0000148C                           417      ** Eventually, NOCK will be called here
+0000148C  4EB9 000014A6            418      JSR     WRITE
+00001492  4E75                     419      RTS
+00001494                           420  PRINT_COME_BACK_MSG
+00001494  47F9 000015FC            421      LEA     COMEBK,A3
+0000149A  1E3C 0000                422      MOVE.B  #0,D7
+0000149E                           423      ** Eventually, NOCK will be called here
+0000149E  4EB9 000014A6            424      JSR     WRITE
+000014A4  4E75                     425      RTS
+000014A6                           426  WRITE   * Writes string pointed to by A3 to memory pointed to by A1
+000014A6                           427      *MOVEA.L A4,A1     * Save the position of A4 before writing (for I/0)
+000014A6                           428  WRITE_LOOP
+000014A6  18DB                     429      MOVE.B  (A3)+,(A4)+     * Write one byte and increment
+000014A8  0C13 0000                430      CMP.B   #0,(A3)         * Are we at the null terminator?
+000014AC  66F8                     431      BNE     WRITE_LOOP      * If not, keep going
+000014AE                           432      *MOVE.B  #$2C,(A4)+     * Write the null terminator before exiting
+000014AE  4E75                     433      RTS                     * Executes once null terminator was reached
+000014B0                           434      
+000014B0                           435  ;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+000014B0                           436  
+000014B0  =00004E71                437  CODE_NOP    EQU     $4E71
+000014B0  =00004E75                438  CODE_RTS    EQU     $4E75
+000014B0                           439  
+000014B0  =00002000                440  A4_PREV     SET     $2000
+000014B0                           441  
+000014B0= 4E 4F 50 20 20 20 ...    442  S_NOP       DC.B    'NOP            ',0
+000014C0= 52 54 53 20 20 20 ...    443  S_RTS       DC.B    'RTS            ',0
+000014D0= 4D 4F 56 45 20 20 ...    444  S_MOVE      DC.B    'MOVE           ',0
+000014E0= 4A 53 52 20 20 20 ...    445  S_JSR       DC.B    'JSR            ',0
+000014F0= 41 44 44 51 20 20 ...    446  S_ADDQ      DC.B    'ADDQ           ',0
+00001500= 41 44 44 49 20 20 ...    447  S_ADDI      DC.B    'ADDI           ',0
+00001510= 53 55 42 49 20 20 ...    448  S_SUBI      DC.B    'SUBI           ',0
+00001520= 43 4C 52 20 20 20 ...    449  S_CLR       DC.B    'CLR            ',0
+00001530= 4C 45 41 20 20 20 ...    450  S_LEA       DC.B    'LEA            ',0
+00001540= 4D 4F 56 45 51 20 ...    451  S_MOVEQ     DC.B    'MOVEQ          ',0
+00001550= 42 47 54 20 20 20 ...    452  S_BGT       DC.B    'BGT            ',0
+00001560= 42 4C 45 20 20 20 ...    453  S_BLE       DC.B    'BLE            ',0
+00001570= 42 43 43 20 20 20 ...    454  S_BCC       DC.B    'BCC            ',0
+00001580= 4D 4F 56 45 2E 42 ...    455  S_MOVE_B    DC.B    'MOVE.B         ',0
+00001590= 4D 4F 56 45 41 2E ...    456  S_MOVEA_W   DC.B    'MOVEA.W        ',0
+000015A0= 4D 4F 56 45 2E 57 ...    457  S_MOVE_W    DC.B    'MOVE.W         ',0
+000015B0= 4D 4F 56 45 41 2E ...    458  S_MOVEA_L   DC.B    'MOVEA.L        ',0
+000015C0= 4D 4F 56 45 2E 4C ...    459  S_MOVE_L    DC.B    'MOVE.L         ',0
+000015D0                           460  
+000015D0                           461  
+000015D0= 49 4E 56 41 4C 49 ...    462  INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
+000015FC= 43 6F 6D 65 20 62 ...    463  COMEBK      DC.B    'Come back to me pls dont forget me',0 
+0000161F= 42 61 64 20 4F 49 ...    464  BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
+0000164F                           465  
+0000164F  =00000FC0                466  JSR_MASK        EQU     %0000111111000000
+0000164F  =00000F00                467  ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
+0000164F  =00000000                468  BYTE_MASK       EQU     %0000000000000000       * Not sure if this is needed
+0000164F  =00000040                469  WORD_MASK       EQU     %0000000001000000       * not sure if this is needed
+0000164F  =00000080                470  LONG_MASK       EQU     %0000000010000000       * not sure if this is needed
+0000164F  =00000F00                471  CLR_MASK        EQU     %0000111100000000
+0000164F  =000001C0                472  LEA_MASK        EQU     %0000000111000000
+0000164F  =00000F00                473  Bcc_MASK        EQU     %0000111100000000
+0000164F                           474  
+0000164F  =000031C0                475  MOVEA_MASK      EQU     %0011000111000000
+0000164F  =00003000                476  MOVE_MASK       EQU     %0011000000000000
+0000164F                           477  ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+0000164F                           478  
+0000164F                           479  
+0000164F                           480  
+0000164F                           481  -------------------- end include --------------------
+0000164F                           482      
+00001650  4E71                     483      NOP                         * Ensures included files align on word boundary
+00001652                           484      
+00001652                           485      INCLUDE 'EA.X68'
+00001652                           486  
+00001652                           487  
+00001652                           488  ;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
+00001652                           489  
+00001652                           490  ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
+00001652                           491  
+00001652                           492  
+00001652                           493  
+00001652                           494  
+00001652                           495  
+00001652                           496  ;; PROBABLY REMOVE THIS WRITE SR
+00001652                           497  
+00001652                           498  MOVE_EA
+00001652                           499  
+00001652                           500  ;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
+00001652                           501      * 1.) Mask 3 LSB into D6 (reg #)
+00001652                           502      * 2.) ROR 3 bits
+00001652                           503      * 3.) Mask 3 LSB into D0 (mode #)
+00001652                           504      * 4.) Call mode-specific buffer writer (DO_MODE -> write_mode_x)
+00001652                           505  ;; NOTES: there will be one mode-specific buffer writer for each mode.
+00001652                           506  ;; The routine will write mode-specific strings to the buffer in addition to
+00001652                           507  ;; the register number (converted to ASCII). Use A3 and A4 to do this.
+00001652                           508      * 5.) Write a comma
+00001652                           509      * 6.) ROR 3 bits
+00001652                           510      * 7.) Mask 3 LSB into D0 (mode #)
+00001652                           511      * 8.) ROR 3 bits
+00001652                           512      * 9.) Mask 3 LSB into D6 (reg #)
+00001652                           513      * 10.) Call mode-specific buffer writer
+00001652                           514      * 11.) Return to I/O module
+00001652                           515      
+00001652                           516  
+00001652  2C05                     517      MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
+00001654  CC7C 0007                518      AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
+00001658  E65D                     519      ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
+0000165A  2005                     520      MOVE.L  D5,D0               * D0 will hold the mode
+0000165C  C07C 0007                521      AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+00001660  4EB9 00001682            522      JSR     DO_MODE             * Get source mode decoded and written to buffer
+00001666                           523      
+00001666                           524      ** CURRENT BUFFER STATE: MOVE.x         Xn
+00001666                           525      
+00001666  18FC 002C                526      MOVE.B  #',',(A4)+           * Write the comma between EA modes
+0000166A  E65D                     527      ROR.W   #3,D5               * dest mode is now 3 LSB of D5
+0000166C  2005                     528      MOVE.L  D5,D0               * Copy new rotated word into D0 for masking
+0000166E  C07C 0007                529      AND.W   #THREE_LSB_MASK,D0  * D0 now holds dest mode code
+00001672  E65D                     530      ROR.W   #3,D5               * source register is now 3 LSB of D5
+00001674  2C05                     531      MOVE.L  D5,D6               * Copy new rotated word into D6 for masking
+00001676  CC7C 0007                532      AND.W   #THREE_LSB_MASK,D6  * mask source register into D6
+0000167A  4EB9 00001682            533      JSR     DO_MODE             * Get dest mode decoded and written to buffer
+00001680                           534      
+00001680                           535      ** FINAL BUFFER STATE: MOVE.x         Xn,Xn
+00001680                           536      
+00001680  4E75                     537      RTS
+00001682                           538      
+00001682                           539      
+00001682                           540      
+00001682                           541  ;; Finds the mode stored in D6 and branches to appropriate SR to write to the buffer
+00001682                           542  DO_MODE
+00001682  B03C 0000                543      CMP.B   #00,D0      ** Mode 0 - Data Register Direct
+00001686  6700 0024                544      BEQ     DR_DIRECT
+0000168A                           545      
+0000168A  B03C 0001                546      CMP.B   #01,D0      ** Mode 1 - Address Register Direct
+0000168E  6700 0028                547      BEQ     AR_DIRECT   
+00001692                           548      
+00001692  B03C 0002                549      CMP.B   #02,D0      ** Mode 2 - Address Register Indirect
+00001696  6700 0020                550      BEQ     AR_INDIRECT
+0000169A                           551      
+0000169A  B03C 0003                552      CMP.B   #03,D0      ** Mode 3 - Address Register Indirect w/ Post-increment
+0000169E  6700 0018                553      BEQ     AR_POSTINC
+000016A2                           554      
+000016A2  B03C 0004                555      CMP.B   #04,D0      ** Mode 4 - Address Register Indirect w/ Pre-decrement
+000016A6  6700 0010                556      BEQ     AR_PREDEC
+000016AA                           557      
+000016AA                           558      ** HERE: check for non-required EA modes (101, 110, 111 w/ 010 in Xn, 111 w/ 011 in Xn)
+000016AA                           559      ** if found, branch to "unsupported EA mode" branch
+000016AA                           560      
+000016AA  4E75                     561      RTS
+000016AC                           562  
+000016AC                           563  
+000016AC                           564  DR_DIRECT   *** Mode 0
+000016AC  18FC 0044                565      MOVE.B  #'D',(A4)+   * Write D to the buffer
+000016B0  0606 0030                566      ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
+000016B4  18C6                     567      MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+000016B6  4E75                     568      RTS
+000016B8                           569  
+000016B8                           570  AR_DIRECT   *** Mode 1
+000016B8                           571      
+000016B8                           572  
+000016B8                           573  AR_INDIRECT *** Mode 2
+000016B8                           574      * WRITE (A
+000016B8                           575      * WRITE NUMBER IN D6
+000016B8                           576      * WRITE )
+000016B8                           577  
+000016B8                           578  AR_POSTINC  *** Mode 3
+000016B8                           579      * WRITE (A
+000016B8                           580      * WRITE NUMBER IN D6
+000016B8                           581      * WRITE )+
+000016B8                           582      
+000016B8                           583  AR_PREDEC   *** Mode 4
+000016B8                           584      * WRITE -(A
+000016B8                           585      * WRITE NUMBER IN D6
+000016B8                           586      * WRITE )
+000016B8                           587  
+000016B8                           588  IMM_DATA
+000016B8                           589      * HOW TO DO THIS?
+000016B8                           590  
+000016B8                           591  ABS_LONG
+000016B8                           592      * GET LONG FROM (A6)+
+000016B8                           593      * WRITE $
+000016B8                           594      * WRITE DATA GOT FROM A6
+000016B8                           595  
+000016B8                           596  ABS_WORD
+000016B8                           597      * GET WORD FROM (A6)+
+000016B8                           598      * WRITE $
+000016B8                           599      * WRITE DATA GOT FROM A6
+000016B8                           600      
+000016B8                           601  
+000016B8  =00000007                602  THREE_LSB_MASK  EQU     %0000000000000111
+000016B8                           603  
+000016B8                           604  ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
+000016B8                           605  
+000016B8                           606      END    START        ; last line of source
+000016B8                           607  -------------------- end include --------------------
 
 No errors detected
 No warnings generated
@@ -676,119 +618,112 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 A4_PREV             2000
-ABS_LONG            1722
-ABS_WORD            1722
-ADDR_PRMPT_END      11E7
-ADDR_PRMPT_STRT     11C4
+ABS_LONG            16B8
+ABS_WORD            16B8
+ADDR_PRMPT_END      1182
+ADDR_PRMPT_STRT     115F
 ADDSUBI_MASK        F00
-AR_DIRECT           1722
-AR_INDIRECT         1722
-AR_POSTINC          1722
-AR_PREDEC           1722
+AR_DIRECT           16B8
+AR_INDIRECT         16B8
+AR_POSTINC          16B8
+AR_PREDEC           16B8
 ASC_CHAR_MAX        46
 ASC_CHAR_MIN        41
 ASC_NUM_MAX         39
 ASC_NUM_MIN         30
-ASC_TO_CHAR         1098
-ASC_TO_NUM          108E
-BAD_OIOO            1689
+ASC_TO_CHAR         1096
+ASC_TO_NUM          108C
+BAD_OIOO            161F
 BCC_MASK            F00
-BUFFER              1238
 BYTE_MASK           0
-CHECK_CHAR_MAX      1082
-CHECK_CHAR_MIN      1076
-CHECK_NUM_MAX       1068
-CHECK_NUM_MIN       105C
+CHECK_CHAR_MAX      1080
+CHECK_CHAR_MIN      1074
+CHECK_NUM_MAX       1066
+CHECK_NUM_MIN       105A
 CLR_MASK            F00
 CODE_NOP            4E71
 CODE_RTS            4E75
-COLON_SPACE         1161
-COMEBK              1666
-CONVERSION_LOOP     105A
+COMEBK              15FC
+CONVERSION_LOOP     1058
 CR                  D
 DISM_CODE           8000
-DONE_MSG            115B
-DO_ADDI             13F0
-DO_ADDQ             144A
-DO_BCC              1426
-DO_BCC_CASE         13CE
-DO_BGT              1402
-DO_BLE              1414
-DO_CLR              145C
-DO_JSR              14C8
-DO_LEA              146E
-DO_MODE             16EC
-DO_MOVE             14A4
-DO_MOVEA_L          13A4
-DO_MOVEA_W          137A
-DO_MOVEQ            14B6
-DO_MOVE_B           1362
-DO_MOVE_L           13B6
-DO_MOVE_W           138C
-DO_NOP              1480
-DO_RTS              1492
-DO_SUBI             1438
-DR_DIRECT           1716
-END_LTE_BEG         1181
-END_NOW             123E
-ERROR_END_LTE_BEG   10BE
-ERROR_INV_INP       10AE
-IMM_DATA            1722
-INVALID             163A
-INVALID_INPUT       1164
-IXXX_BRA            135E
+DONE_MSG            10F9
+DO_ADDI             1386
+DO_ADDQ             13E0
+DO_BCC              13BC
+DO_BCC_CASE         1364
+DO_BGT              1398
+DO_BLE              13AA
+DO_CLR              13F2
+DO_JSR              145E
+DO_LEA              1404
+DO_MODE             1682
+DO_MOVE             143A
+DO_MOVEA_L          133A
+DO_MOVEA_W          1310
+DO_MOVEQ            144C
+DO_MOVE_B           12F8
+DO_MOVE_L           134C
+DO_MOVE_W           1322
+DO_NOP              1416
+DO_RTS              1428
+DO_SUBI             13CE
+DR_DIRECT           16AC
+END_LTE_BEG         111C
+END_NOW             11D4
+ERROR_END_LTE_BEG   10BC
+ERROR_INV_INP       10AC
+IMM_DATA            16B8
+INVALID             15D0
+INVALID_INPUT       10FF
+IXXX_BRA            12F4
 JSR_MASK            FC0
 LEA_MASK            1C0
 LF                  A
 LONG_MASK           80
-MAIN_LOOP           10CE
+MAIN_LOOP           10CC
 MOVEA_MASK          31C0
-MOVE_EA             16BC
+MOVE_EA             1652
 MOVE_MASK           3000
-NEW_LINE            1158
-NULL_TERM           1236
-OIIX_BRA            1324
-OIOO_BRA            1330
-OIOX_BRA            1318
-OIXX_BRA            1288
-OOII_BRA            12F8
-OOIO_BRA            12D8
-OOIX_BRA            12A0
-OOOI_BRA            12C6
-OOOO_BRA            12AC
-OOOX_BRA            1294
-OOXX_BRA            1278
-OP_DECODE           1248
-OXXX_BRA            126C
-PRINT_COME_BACK_MSG  14FE
-PRINT_INVALID_MSG   14DA
-PRINT_IT            110A
-PRINT_IT_LOOP       1116
-PRINT_IT_STRING     1209
-PRINT_LOOP          10DA
-PRINT_NOPS_TEST     10EC
-PRINT_OIOO_ERROR    14EC
-SHIFTS              10A2
+NEW_LINE            10F6
+OIIX_BRA            12BA
+OIOO_BRA            12C6
+OIOX_BRA            12AE
+OIXX_BRA            121E
+OOII_BRA            128E
+OOIO_BRA            126E
+OOIX_BRA            1236
+OOOI_BRA            125C
+OOOO_BRA            1242
+OOOX_BRA            122A
+OOXX_BRA            120E
+OP_DECODE           11DE
+OXXX_BRA            1202
+PRINT_COME_BACK_MSG  1494
+PRINT_INVALID_MSG   1470
+PRINT_IT_STRING     11A4
+PRINT_OIOO_ERROR    1482
+SHIFTS              10A0
 START               1000
-S_ADDI              156A
-S_ADDQ              155A
-S_BCC               15DA
-S_BGT               15BA
-S_BLE               15CA
-S_CLR               158A
-S_JSR               154A
-S_LEA               159A
-S_MOVE              153A
-S_MOVEA_L           161A
-S_MOVEA_W           15FA
-S_MOVEQ             15AA
-S_MOVE_B            15EA
-S_MOVE_L            162A
-S_MOVE_W            160A
-S_NOP               151A
-S_RTS               152A
-S_SUBI              157A
+S_ADDI              1500
+S_ADDQ              14F0
+S_BCC               1570
+S_BGT               1550
+S_BLE               1560
+S_CLR               1520
+S_JSR               14E0
+S_LEA               1530
+S_MOVE              14D0
+S_MOVEA_L           15B0
+S_MOVEA_W           1590
+S_MOVEQ             1540
+S_MOVE_B            1580
+S_MOVE_L            15C0
+S_MOVE_W            15A0
+S_NOP               14B0
+S_RTS               14C0
+S_SUBI              1510
 THREE_LSB_MASK      7
 WORD_MASK           40
-WRITE               1510
-WRITE_LOOP          1510
+WRITE               14A6
+WRITE_LOOP          14A6
