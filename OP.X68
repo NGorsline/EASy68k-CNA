@@ -33,28 +33,30 @@ OP_DECODE
     
 * ----------------------BEGIN NARROWING THE LEFT BRANCH OF THE OPCODE SELECTIONS ----------
 OXXX_BRA
-    BTST.L  #14,D5      * Test the second bit 
-    BEQ     OOXX_BRA    * Branch to opcodes starting with 00
-    BRA     OIXX_BRA    * Branch to opcodes starting with 01   *** COME BAK
+    BTST.L  #14,D5              * Test the second bit 
+    BEQ     OOXX_BRA            * Branch to opcodes starting with 00
+    BRA     OIXX_BRA            * Branch to opcodes starting with 01   *** COME BAK
 
 OOXX_BRA
-    BTST.L  #13,D5          * Test the second bit 
-    BEQ     OOOX_BRA        * Branch to opcodes starting with 000
-    BRA     OOIX_BRA        * Might be MOVE, MOVEA
+    BTST.L  #13 ,D5              * Test the third bit 
+    BEQ     OOOX_BRA            * Branch to opcodes starting with 000
+    BRA     OOIX_BRA            * Might be MOVE, MOVEA
     BRA     PRINT_INVALID_MSG
 OIXX_BRA
     BTST.L  #13,D5
     BEQ     OIOX_BRA            * CLR, JSR, MOVEM, LEA, ADDQ, SUBQ
     BRA     OIIX_BRA            * BCC, OR MOVEQ
+    BRA     PRINT_INVALID_MSG
 OOOX_BRA
-    BTST.L  #12,D5              * Test the second bit 
+    BTST.L  #12,D5              * Test the fourth bit 
     BEQ     OOOO_BRA            * Decision for SUBI or ADDI
     BRA     OOOI_BRA            * MOVE and MOVEA (B)
+    BRA     PRINT_INVALID_MSG
 OOIX_BRA
-    BTST.L  #12,D5              * Test the second bit 
+    BTST.L  #12,D5              * Test the fourth bit 
     BEQ     OOIO_BRA            * MOVE or MOVEA need to be handled here (W)
     BRA     OOII_BRA            * MOVE or MOVEA need to be handled here (L)
-
+    BRA     PRINT_INVALID_MSG
 OOOO_BRA                        * tests for ADDI or SUBI
     MOVE.W  #ADDSUBI_MASK,D2   * Load mask for ADDI temporarily into register for AND operation
     AND.W   D5,D2               * AND with current opcode data and store into D2
@@ -68,7 +70,6 @@ OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
     AND.W   D5,D2
     CMP.W   #$1000,D2           * is it a move byte?
     BEQ     DO_MOVE_B           
-
     BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
 OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
     MOVE.W  #MOVEA_MASK,D2
@@ -122,37 +123,93 @@ OIOO_BRA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
 *------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
-IXXX_BRA
-    BRA     PRINT_COME_BACK_MSG   * temporary until further development of right branch
-    
+IXXX_BRA 
+    BTST.L  #14,D5              * Test the second bit 
+    BEQ     IOXX_BRA            * Branch to opcodes starting with 10
+    BRA     IIXX_BRA            * Branch to opcodes starting with 11
+IOXX_BRA
+    BTST.L  #13,D5              * Test the third bit 
+    BEQ     IOOX_BRA            * Might be SUB or DIVU
+    BRA     IOIX_BRA            * Might be CMP
+    BRA     PRINT_INVALID_MSG
+IIXX_BRA
+    BTST.L  #13,D5              * Test the third bit 
+    BEQ     IIOX_BRA            * might be ADD, ADDA, MULS, MULU, AND
+    BRA     IIIX_BRA            * Might be MOVE, MOVEA
+    BRA     PRINT_INVALID_MSG 
+IOOX_BRA
+    BTST.L  #12,D5              * Test the fourth bit 
+    BEQ     IOOO_BRA            * Might be DIVU, OR 
+    BRA     IOOI_BRA            * DO SUB!
+    BRA     PRINT_INVALID_MSG
+IOIX_BRA
+    BTST.L  #12,D5              * Test the fourth bit 
+    BNE     IOII_BRA            * check if it's CMP
+    BRA     PRINT_INVALID_MSG   * reached the end, there is no IOIO module
+IIOX_BRA
+    BTST.L  #12,D5              * Test the fourth bit 
+    BEQ     IIOO_BRA            * might be AND, MULU, MULS,
+    BRA     IIOI_BRA            * might be ADD, ADDA, 
+    BRA     PRINT_INVALID_MSG 
+IIIX_BRA
+    BTST.L  #12,D5              * Test the fourth bit   
+    BEQ     IIIO_BRA            * might be LSR, LSL, ASR, ASL, ROL, ROR
+    BRA     PRINT_INVALID_MSG   * there exists no IIII module 
+IOOO_BRA                        * Logic for OR, DIVU 
+    BRA     PRINT_COME_BACK_MSG
+IOOI_BRA                        * Logic for SUB
+    BRA     PRINT_COME_BACK_MSG
+IOII_BRA                        * Logic for CMP
+    MOVE    #CMP_MASK,D2        * Temporarily load mask into D2
+    AND.W   D5,D2
+    CMP.W   #$B000,D2           * Check if it's CMP.B
+    BEQ     DO_CMP_B           
+
+    CMP.W   D5,D2
+    CMP.W   #$B040,D2           * Check if it's CMP.W
+    BEQ     DO_CMP_W
+
+    CMP.W   D5,D2
+    CMP.W   #$B080,D2           * Check if it's CMP.L
+    BEQ     DO_CMP_L
+
+    BRA     PRINT_INVALID_MSG   * No other opcodes for IOII 
+
+IIOO_BRA                        * Logic for AND,MULS, MULU
+    BRA     PRINT_COME_BACK_MSG
+IIOI_BRA                        * Logic for ADDA, ADD, 
+    BRA     PRINT_COME_BACK_MSG
+IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
+    BRA     PRINT_COME_BACK_MSG
 *------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
+* TODO: organize these in order of their number 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
-    MOVE.B  #$2A,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVEA_W
     LEA     S_MOVEA_W,A3
-    MOVE.B  #$3B,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
+    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_MOVE_W
     LEA     S_MOVE_W,A3
-    MOVE.B  #$2B,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
-    MOVE.B  #$3C,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
+    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_MOVE_L
     LEA     S_MOVE_L,A3
-    MOVE.B  #$2C,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
     JSR     WRITE
     JSR     MOVE_EA
     RTS
@@ -170,7 +227,6 @@ DO_BCC_CASE
     BEQ.W   DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
-
 DO_ADDI
     LEA     S_ADDI,A3
     MOVE.B  #8,D7
@@ -193,6 +249,21 @@ DO_BCC
     LEA     S_BCC,A3
     MOVE.B  #28,D7
     ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_CMP_B
+    LEA     S_CMP_B,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    RTS
+DO_CMP_W
+    LEA     S_CMP_W,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    RTS
+DO_CMP_L
+    LEA     S_CMP_L,A3
+    MOVE.B  #25,D7
     JSR     WRITE
     RTS
 DO_SUBI
@@ -288,6 +359,7 @@ CODE_RTS    EQU     $4E75
 A4_PREV     SET     $2000
 
 *** Strings for opcodes (write these to memory)
+* ----- Strings from LEFT (0) branch --------- *
 S_NOP       DC.B    'NOP            ',0
 S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
@@ -306,7 +378,24 @@ S_MOVEA_W   DC.B    'MOVEA.W        ',0
 S_MOVE_W    DC.B    'MOVE.W         ',0
 S_MOVEA_L   DC.B    'MOVEA.L        ',0
 S_MOVE_L    DC.B    'MOVE.L         ',0
-
+* ----- Strings from RIGHT (1) branch --------- *
+S_DIVU      DC.B    'DIVU.W         ',0
+S_OR        DC.B    'OR             ',0
+S_SUB       DC.B    'SUB            ',0
+S_CMP_B     DC.B    'CMP.B          ',0
+S_CMP_W     DC.B    'CMP.W          ',0
+S_CMP_L     DC.B    'CMP.L          ',0
+S_MULU      DC.B    'MULU           ',0
+S_MULS      DC.B    'MULS           ',0
+S_AND       DC.B    'AND            ',0
+S_ADD       DC.B    'ADD            ',0
+S_ADDA      DC.B    'ADDA           ',0
+S_LSR       DC.B    'LSR            ',0
+S_LSL       DC.B    'LSL            ',0
+S_ROR       DC.B    'ROR            ',0
+S_ROL       DC.B    'ROL            ',0
+S_ASL       DC.B    'ASL            ',0
+S_ASR       DC.B    'ASR            ',0
 
 *** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
@@ -325,6 +414,7 @@ Bcc_MASK        EQU     %0000111100000000
 
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
+CMP_MASK        EQU     %1111000011000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 
