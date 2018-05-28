@@ -17,17 +17,6 @@
 *** D6 -> Holds register # (used by WRITE)
 
 
-
-;; PROBABLY REMOVE THIS WRITE SR
-*** Call this function to print the string loaded in A3 to the running
-*** human-readable line. Note that this subroutine will not write a null
-*** terminator; one must be written at the very end of decoding a full command.
-*WRITE   * Writes tring pointed to by A3 to memory pointed to by A4
-*    MOVE.B  (A3)+,(A4)+     * Write one byte and increment
-*    CMP.B   #0,(A3)         * Check if the null terminator has been reached
-*    BNE     WRITE           * If not, keep writing!
-*    RTS
-
 MOVE_EA
 
 ;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
@@ -56,7 +45,7 @@ MOVE_EA
     
     ** CURRENT BUFFER STATE: MOVE.x         Xn
     
-    MOVE.B  #',',(A4)+           * Write the comma between EA modes
+    MOVE.B  #',',(A4)+          * Write the comma between EA modes
     ROR.W   #3,D5               * dest mode is now 3 LSB of D5
     MOVE.L  D5,D0               * Copy new rotated word into D0 for masking
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds dest mode code
@@ -71,7 +60,7 @@ MOVE_EA
     
     
     
-;; Finds the mode stored in D6 and branches to appropriate SR to write to the buffer
+; Finds mode stored in D6 and branches to appropriate SR to write to the buffer
 DO_MODE
     CMP.B   #00,D0      ** Mode 0 - Data Register Direct
     BEQ     DR_DIRECT
@@ -95,32 +84,43 @@ DO_MODE
 
 
 DR_DIRECT   *** Mode 0
-    MOVE.B  #'D',(A4)+   * Write D to the buffer
+    MOVE.B  #'D',(A4)+  * Write D to the buffer
     ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
     MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
     RTS
 
 AR_DIRECT   *** Mode 1
-*    LEA     OPEN_PAREN_A,A3
-*    JSR     WRITE
-*    * Get the register number from D6, adding $30 to convert to ASCII
-*    ADDI.B  #$30,D6
+    MOVE.B  #'A',(A4)+  * Write A to the buffer
+    ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
+    MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+    RTS
     
 
 AR_INDIRECT *** Mode 2
-    * WRITE (A
-    * WRITE NUMBER IN D6
-    * WRITE )
+    MOVE.B  #'(',(A4)+  * Write ( to the buffer
+    MOVE.B  #'A',(A4)+  * Write A to the buffer
+    ADDI.B  #$30,D6     * Add $30 tot he register number to convert to ASCII
+    MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+    MOVE.B  #')',(A4)+  * Write ) to the buffer
+    RTS
 
 AR_POSTINC  *** Mode 3
-    * WRITE (A
-    * WRITE NUMBER IN D6
-    * WRITE )+
+    MOVE.B  #'(',(A4)+  * Write ( to the buffer
+    MOVE.B  #'A',(A4)+  * Write A to the buffer
+    ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
+    MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+    MOVE.B  #')',(A4)+  * Write ) to the buffer
+    MOVE.B  #'+',(A4)+  * Write + to the buffer
+    RTS
     
 AR_PREDEC   *** Mode 4
-    * WRITE -(A
-    * WRITE NUMBER IN D6
-    * WRITE )
+    MOVE.B  #'-',(A4)+
+    MOVE.B  #'(',(A4)+  * Write ( to the buffer
+    MOVE.B  #'A',(A4)+  * Write A to the buffer
+    ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
+    MOVE.B  D6,(A4)+    * Write the ASCII-converted number to the buffer
+    MOVE.B  #')',(A4)+  * Write ) to the buffer
+    RTS
 
 IMM_DATA
     * HOW TO DO THIS?
@@ -135,11 +135,6 @@ ABS_WORD
     * WRITE $
     * WRITE DATA GOT FROM A6
     
-*OPEN_PAREN_A    DC.B    '(A',0
-*OPEN_PAREN_D    DC.B    '(D',0
-*DECR_OPEN_PAREN DC.B    '-(',0
-*CLOSE_PAREN     DC.B    ')',0
-*INC_CLOSE_PAREN DC.B    ')+',0
 
 *** MASKS
 THREE_LSB_MASK  EQU     %0000000000000111
