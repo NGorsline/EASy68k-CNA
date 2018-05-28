@@ -96,7 +96,7 @@ SHIFTS            ;; Shifts D2 left to make room for converted hexabit
 
 
 
-
+    
 ;; ~~~~~~~~ERROR MESSAGES~~~~~~~~
 ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
     LEA     INVALID_INPUT,A1
@@ -113,6 +113,49 @@ ERROR_END_LTE_BEG ;; Prints END_LTE_BEG (end <= beginning) error to console.
   
   
   
+  
+;; ~~~~~~~~PRINT MEMORY ADDRESS~~~~~~~~
+PRINT_MEM_ADDRESS
+
+    MOVE.L  A6,D3       * Copy current location into working register
+    MOVE.B  #$08,D4     * For looping
+    
+DEC_ADDR_LOOP
+    ROL.L   #4,D3       * Rotate 4 bits to front of register
+    MOVE.L  #ADR_PR_MASK,D2
+    AND.L   D3,D2
+    
+    CMP.B   #$0A,D2     * Checking to see if the current hexabit is num or letter
+    BGE     IS_A_F     
+IS_0_9
+    ADDI.B  #$30,D2
+    BRA     CONT_CONV
+IS_A_F
+    ADDI.B  #$37,D2
+CONT_CONV               * Continue conversion
+    MOVE.B  D2,(A4)+ 
+    SUBI.B  #$01,D4     * Subtract one from loop counter
+    CMP     #$0,D4      * Check if we are at 0 (MAKE SURE NOT OFF BY ONE ERROR), probably is
+    BNE     DEC_ADDR_LOOP
+    JSR     ADD_SPACES  * Adding spaces
+    RTS                 * Return back to main loop
+    
+ADD_SPACES
+    MOVE.B #11,D4       * Counter for loop, adding 12 spaces
+ADD_SP_LOOP             * Adding space loop
+
+    MOVE.B  #$20,(A4)+  * Writing to memory
+    SUBI.B  #$1,D4      * Dec loop
+    CMP.B   #$0,D4      * Checking to see if finished with loop
+    BNE     ADD_SP_LOOP
+    RTS                 * Returb back to print mem address
+    
+
+;; ~~~~~~~~END OF PRINT MEMORY ADDRESS~~~~~~~~
+
+
+
+  
 ; Main loop of the program; Checks if the iterator (A6) is past the ending 
 ; address (A5). If not, calls the OP module. Once the OP and EA modules have
 ; finished, they return to this module, which then places a null terminator
@@ -121,13 +164,14 @@ ERROR_END_LTE_BEG ;; Prints END_LTE_BEG (end <= beginning) error to console.
 ; stop printing. After the line is printed, A4 is copied into A1 to start 
 ; printing from the next spot in memory where the buffer (A4) writes to.
 MAIN_LOOP
+    MOVEA.L A4,A1       * Set A1 to point at beginning of next decoded line
+    JSR     PRINT_MEM_ADDRESS
     CMPA.L  A5,A6
     BGE     END_NOW     * End program if iterator is at or past A5 (end addr)
     JSR     OP_DECODE   * Call the OP module, which will read next word
     MOVE.B  #$00,(A4)+  * Write null term at end of freshly decoded line
     MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
     TRAP    #15
-    MOVEA.L A4,A1       * Set A1 to point at beginning of next decoded line
     ;;; NICK -- I think you could put logic for printing 10 at a time here.
     BRA     MAIN_LOOP
     
@@ -149,6 +193,10 @@ ASC_NUM_MIN     EQU     $30     * ASCII key for 0
 ASC_NUM_MAX     EQU     $39     * ASCII key for 9
 ASC_CHAR_MIN    EQU     $41     * ASCII key for A
 ASC_CHAR_MAX    EQU     $46     * ASCII key for F
+
+; Masks
+ADR_PR_MASK     EQU     %00000000000000000000000000001111
+
 
 ; Message strings
 NEW_LINE        DC.B    '',0,CR,LF
@@ -228,6 +276,7 @@ END_NOW
 *     CMP.L   A5,A6
 *     BLE     PRINT_IT_LOOP
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+
 
 
 *~Font name~Courier New~
