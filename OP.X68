@@ -360,19 +360,22 @@ DO_NOP
     RTS                 * Return to I/O module 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    MOVE.B  #2,D7           * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    MOVE.B  #00,D1          * passing size code BYTE to EA
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_W
     LEA     S_MOVE_W,A3
     MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
+    MOVE.B  #01,D1          * passing size code WORD to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_L
     LEA     S_MOVE_L,A3
     MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+    MOVE.B  #10,D1          * passing size code LONG to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
