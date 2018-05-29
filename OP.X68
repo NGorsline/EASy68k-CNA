@@ -162,6 +162,19 @@ IOOO_BRA                        * Logic for OR, DIVU
     BEQ.W   DO_DIVU_W
     *if not DIVU, try to check if it's any form of OR
     
+    CMP.W   #$0000,D2           * Is it a byte operation for <ea> V Dn --> Dn?
+    BEQ.W   DO_OR_B
+    CMP.W   #$0100,D2           * Is it a byte operation for Dn V <ea> --> <ea>
+    BEQ.W   DO_OR_B
+    CMP.W   #$0040,D2           * Is it a word operation for <ea> V Dn --> Dn?
+    BEQ.W   DO_OR_W
+    CMP.W   #$0140,D2           * Is it a word operation for Dn V <ea> --> <ea>
+    BEQ.W   DO_OR_W
+    CMP.W   #$0080,D2           * Is it a long word operation for <ea> V Dn --> Dn?
+    BEQ.W   DO_OR_L
+    CMP.W   #$0180,D2           * Is it a long word operation for Dn V <ea> --> <ea>
+    BEQ.W   DO_OR_L
+
     BRA     PRINT_COME_BACK_MSG *!! COME BACK TO THIS
 
 IOOI_BRA                        * Logic for SUB
@@ -243,6 +256,21 @@ DO_ADDI
 DO_DIVU_W
     LEA     S_DIVU,A3
     MOVE.B  #14,D7
+    JSR     WRITE
+    RTS
+DO_OR_B
+    LEA     S_OR_B,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_W
+    LEA     S_OR_W,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_L
+    LEA     S_OR_L,A3
+    MOVE.B  #18,D7
     JSR     WRITE
     RTS
 DO_BGT
@@ -408,7 +436,9 @@ S_ROR       DC.B    'ROR            ',0
 S_ROL       DC.B    'ROL            ',0
 S_ASL       DC.B    'ASL            ',0
 S_ASR       DC.B    'ASR            ',0
-
+S_OR_B      DC.B    'OR.B           ',0
+S_OR_W      DC.B    'OR.W           ',0
+S_OR_L      DC.B    'OR.L           ',0
 *** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 

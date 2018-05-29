@@ -45,6 +45,9 @@ HAI
     DIVU.W  D3,D5
     MOVEA.W (A2),A3
     MOVEA.L (A2),A5
+    OR.B    D1,D2
+    OR.W    D2,D3
+    OR.L    D3,D1
     NOP
     NOP
     NOP
