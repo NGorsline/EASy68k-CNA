@@ -31,7 +31,7 @@ OP_DECODE
     BRA     DO_NOP
     RTS * Return to I/O module (temporary; will go to EA module eventually)
     
-* ----------------------BEGIN NARROWING THE LEFT BRANCH OF THE OPCODE SELECTIONS ----------
+* ----------------------BEGINNING OF LEFT BRANCH OF OPCODE SELECTIONS -----------------
 OXXX_BRA
     BTST.L  #14,D5              * Test the second bit 
     BEQ     OOXX_BRA            * Branch to opcodes starting with 00
@@ -119,10 +119,12 @@ OIOO_BRA
     MOVE.W  #LEA_MASK,D2
     AND     D5,D2
     CMP.W   #$01C0,D2              *EQUAL TO LEA?
-    BEQ.W   DO_LEA
+    BEQ     DO_LEA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
-*------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
+*------------------------------- END OF LEFT TREE ----------------------------------------
+***************************************************************************************
+* ----------------------BEGINNING OF RIGHT BRANCH OF OPCODE SELECTIONS -------------------
 IXXX_BRA 
     BTST.L  #14,D5              * Test the second bit 
     BEQ     IOXX_BRA            * Branch to opcodes starting with 10
@@ -135,7 +137,7 @@ IOXX_BRA
 IIXX_BRA
     BTST.L  #13,D5              * Test the third bit 
     BEQ     IIOX_BRA            * might be ADD, ADDA, MULS, MULU, AND
-    BRA     IIIX_BRA            * Might be MOVE, MOVEA
+    BRA     IIIX_BRA            
     BRA     PRINT_INVALID_MSG 
 IOOX_BRA
     BTST.L  #12,D5              * Test the fourth bit 
@@ -156,11 +158,49 @@ IIIX_BRA
     BEQ     IIIO_BRA            * might be LSR, LSL, ASR, ASL, ROL, ROR
     BRA     PRINT_INVALID_MSG   * there exists no IIII module 
 IOOO_BRA                        * Logic for OR, DIVU 
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #DIVU_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$00C0,D2           * DIVU can only be 011 in positions 8-6
+    BEQ     DO_DIVU_W
+    *if not DIVU, try to check if it's any form of OR
+    
+    CMP.W   #$0000,D2           * Is it a byte operation for <ea> V Dn --> Dn?
+    BEQ     DO_OR_B
+    CMP.W   #$0100,D2           * Is it a byte operation for Dn V <ea> --> <ea>
+    BEQ     DO_OR_B
+    CMP.W   #$0040,D2           * Is it a word operation for <ea> V Dn --> Dn?
+    BEQ     DO_OR_W
+    CMP.W   #$0140,D2           * Is it a word operation for Dn V <ea> --> <ea>
+    BEQ     DO_OR_W
+    CMP.W   #$0080,D2           * Is it a long word operation for <ea> V Dn --> Dn?
+    BEQ     DO_OR_L
+    CMP.W   #$0180,D2           * Is it a long word operation for Dn V <ea> --> <ea>
+    BEQ     DO_OR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+
 IOOI_BRA                        * Logic for SUB
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W   #SUB_MASK,D2
+    AND.W    D5,D2
+    CMP.W    #$0000,D2          * is it SUB.B for Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_B
+    CMP.W    #$0100,D2          * is it SUB.B for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_B
+
+    CMP.W   #$0040,D2           * is it SUB.W Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_W
+    CMP.W   #$0140,D2           * is it SUB.W for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_W
+
+    CMP.W   #$0080,D2           * is it SUB.L Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_L
+    CMP.W   #$0180,D2           * is it SUB.L for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+
 IOII_BRA                        * Logic for CMP
-    MOVE    #CMP_MASK,D2        * Temporarily load mask into D2
+    MOVE.W  #CMP_MASK,D2        * Temporarily load mask into D2
     AND.W   D5,D2
     CMP.W   #$B000,D2           * Check if it's CMP.B
     BEQ     DO_CMP_B           
@@ -176,18 +216,174 @@ IOII_BRA                        * Logic for CMP
     BRA     PRINT_INVALID_MSG   * No other opcodes for IOII 
 
 IIOO_BRA                        * Logic for AND,MULS, MULU
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #AND_MM_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$01C0,D2           * Is it MULS.W?
+    BEQ     DO_MULS_W
+
+    CMP.W   #$00C0,D2          * Is it MULU.W?
+    BEQ     DO_MULU_W
+
+    CMP.W   #$0000,D2           * Is it AND.B for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_B
+    CMP.W   #$0100,D2           * Is it AND.B for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_B
+
+    CMP.W   #$0040,D2           * Is it AND.W for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_W
+    CMP.W   #$0140,D2           * Is it AND.W for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_W
+
+    CMP.W   #$0080,D2           * Is it AND.L for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_L
+    CMP.W   #$0180,D2           * Is it AND.L for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_L
+
 IIOI_BRA                        * Logic for ADDA, ADD, 
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #ADD_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$00C0,D2           * first check if it's ADDA.W
+    BEQ     DO_ADDA_W
+
+    CMP.W   #$01C0,D2           * first check if it's ADDA.L
+    BEQ     DO_ADDA_L
+    * Not ADDA? check for all cases of ADD
+    CMP.W   #$0000,D2           * Is it ADD.B for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_B
+    CMP.W   #$0100,D2           * Is it ADD.B for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_B
+
+    CMP.W   #$0040,D2           * Is it ADD.W for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_W
+    CMP.W   #$0140,D2           * Is it ADD.W for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_W
+
+    CMP.W   #$0080,D2           * Is it ADD.L for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_L
+    CMP.W   #$0180,D2           * Is it ADD.L for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
-    BRA     PRINT_COME_BACK_MSG
-*------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
-* TODO: organize these in order of their number 
+    MOVE.W  #R_MODE_MASK,D2     * Initial rotation to differentiate between LSd, ROd, and ASd
+    AND.W   D5,D2
+    CMP.W   #$0008,D2           * Is it LSd? (M = 01)
+    BEQ     DO_LSd
+
+    CMP.W   #$0018,D2           * Is it ROd? (M = 11)
+    BEQ     DO_ROd
+
+    CMP.W   #$0000,D2           * Is it ASd? (M = 00)
+    BEQ     DO_ASd
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+*------------------------------- END OF LEFT TREE ----------------------------------------
+***************************************************************************************
+*-------------------------------- SUB-ROUTINE SECTION ------------------------------------
+DO_LSd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * LSL.B 
+    BEQ     DO_LSL_B
+
+    CMP.W   #$0140,D2           * LSL.W 
+    BEQ     DO_LSL_W
+
+    CMP.W   #$0180,D2           * LSL.L
+    BEQ     DO_LSL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * LSR.B 
+    BEQ     DO_LSR_B
+
+    CMP.W   #$0040,D2           * LSR.W 
+    BEQ     DO_LSR_W
+
+    CMP.W   #$0080,D2           * LSR.L
+    BEQ     DO_LSR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+DO_ROd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * ROL.B 
+    BEQ     DO_ROL_B
+
+    CMP.W   #$0140,D2           * ROL.W 
+    BEQ     DO_ROL_W
+
+    CMP.W   #$0180,D2           * ROL.L
+    BEQ     DO_ROL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * ROR.B 
+    BEQ     DO_ROR_B
+
+    CMP.W   #$0040,D2           * ROR.W 
+    BEQ     DO_ROR_W
+
+    CMP.W   #$0080,D2           * ROR.L
+    BEQ     DO_ROR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+DO_ASd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * ASL.B 
+    BEQ     DO_ASL_B
+
+    CMP.W   #$0140,D2           * ASL.W 
+    BEQ     DO_ASL_W
+
+    CMP.W   #$0180,D2           * ASL.L
+    BEQ     DO_ASL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * ASR.B 
+    BEQ     DO_ASR_B
+
+    CMP.W   #$0040,D2           * ASR.W 
+    BEQ     DO_ASR_W
+
+    CMP.W   #$0080,D2           * ASR.L
+    BEQ     DO_ASR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+DO_NOP
+    LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+    MOVE.B  #1,D7       * Store key for op code for EA module
+    ** Eventually, EA Module will be called here
+    JSR     WRITE       * Jump to WRITE subroutine
+    RTS                 * Return to I/O module 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    MOVE.B  #2,D7           * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
+    MOVE.B  #00,D1          * passing size code BYTE to EA
     JSR     WRITE
     JSR     MOVE_EA
+    RTS
+DO_MOVE_W
+    LEA     S_MOVE_W,A3
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
+    MOVE.B  #01,D1          * passing size code WORD to EA    
+    JSR     WRITE
+    JSR     MOVE_EA
+    RTS
+DO_MOVE_L
+    LEA     S_MOVE_L,A3
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+    MOVE.B  #10,D1          * passing size code LONG to EA    
+    JSR     WRITE
+    JSR     MOVE_EA
+    RTS
+DO_MOVE
+    LEA     S_MOVE,A3       * come back to this, wtf is this
+    MOVE.B  #2,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
     RTS
 DO_MOVEA_W
     LEA     S_MOVEA_W,A3
@@ -195,117 +391,9 @@ DO_MOVEA_W
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
-DO_MOVE_W
-    LEA     S_MOVE_W,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
-    JSR     WRITE
-    JSR     MOVE_EA
-    RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
     MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_MOVE_L
-    LEA     S_MOVE_L,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
-    JSR     WRITE
-    JSR     MOVE_EA
-    RTS
-
-DO_BCC_CASE
-    MOVE.W  #Bcc_MASK,D2
-    AND     D5,D2
-    CMP.W   #$0E00,D2                * Is it BGT?
-    BEQ.W   DO_BGT
-    
-    CMP.W   #$0F00,D2                * Is it BLE?
-    BEQ.W   DO_BLE
-
-    CMP.W   #$0400,D2                * Is it BCC?
-    BEQ.W   DO_BCC
-
-    BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
-DO_ADDI
-    LEA     S_ADDI,A3
-    MOVE.B  #8,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_BGT
-    LEA     S_BGT,A3
-    MOVE.B  #26,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_BLE
-    LEA     S_BLE,A3
-    MOVE.B  #27,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_BCC
-    LEA     S_BCC,A3
-    MOVE.B  #28,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_CMP_B
-    LEA     S_CMP_B,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    RTS
-DO_CMP_W
-    LEA     S_CMP_W,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    RTS
-DO_CMP_L
-    LEA     S_CMP_L,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    RTS
-DO_SUBI
-    LEA     S_SUBI,A3
-    MOVE.B  #11,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_ADDQ
-    *Check for full opcode for 11 and onwards. if invalid, print the message
-    LEA     S_ADDQ,A3
-    MOVE.B  #9,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_CLR
-    LEA     S_CLR,A3
-    MOVE.B  #16,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
-DO_LEA
-    LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #15,D7       * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to I/O module 
-DO_NOP
-    LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #1,D7       * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to I/O module 
-DO_RTS
-    LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-    MOVE.B  #30,D7      * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to the I/O module bra op_decode  
-DO_MOVE
-    LEA     S_MOVE,A3
-    MOVE.B  #2,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
@@ -314,29 +402,353 @@ DO_MOVEQ
     MOVE.B  #4,D7
     JSR     WRITE
     RTS
-DO_JSR
-    LEA     S_JSR,A3
+DO_BCC_CASE
+    MOVE.W  #Bcc_MASK,D2
+    AND     D5,D2
+    CMP.W   #$0E00,D2                * Is it BGT?
+    BEQ     DO_BGT
+    
+    CMP.W   #$0F00,D2                * Is it BLE?
+    BEQ     DO_BLE
+
+    CMP.W   #$0400,D2                * Is it BCC?
+    BEQ     DO_BCC
+
+    BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
+
+* [MODULE #5 -- MOVEM HERE]
+
+DO_ADD_B
+    LEA     S_ADD_B,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADD_W
+    LEA     S_ADD_W,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADD_L
+    LEA     S_ADD_L,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDA_W
+    LEA     S_ADDA_W,A3
+    MOVE.B  #7,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDA_L
+    LEA     S_ADDA_L,A3
+    MOVE.B  #7,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDI
+    MOVE.W  #ADDSUBI_S_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2       *is it ADDI.B?
+    BEQ     DO_ADDI_B
+
+    CMP.W   #$0040,D2       *is it ADDI.W?
+    BEQ     DO_ADDI_W
+
+    CMP.W   #$0080,D2       *is it ADDI.L?
+    BEQ     DO_ADDI_L
+
+    BRA     PRINT_INVALID_MSG
+DO_ADDI_B
+    LEA     S_ADDI_B,A3
+    MOVE.B  #8,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDI_W
+    LEA     S_ADDI_W,A3
+    MOVE.B  #8,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDI_L
+    LEA     S_ADDI_L,A3
+    MOVE.B  #8,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDQ
+    *Check for full opcode for 11 and onwards. if invalid, print the message
+    LEA     S_ADDQ,A3
+    MOVE.B  #9,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_SUB_B
+    LEA     S_SUB_B,A3
+    MOVE.B  #10,D7
+    JSR     WRITE
+    RTS
+DO_SUB_W
+    LEA     S_SUB_W,A3
+    MOVE.B  #10,D7
+    JSR     WRITE
+    RTS
+DO_SUB_L
+    LEA     S_SUB_L,A3
+    MOVE.B  #10,D7
+    JSR     WRITE
+    RTS
+DO_SUBI
+    MOVE.W  #ADDSUBI_S_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2       *is it SUBI.B?
+    BEQ     DO_SUBI_B
+
+    CMP.W   #$0040,D2       *is it SUBI.W?
+    BEQ     DO_SUBI_W
+
+    CMP.W   #$0080,D2       *is it SUBI.L?
+    BEQ     DO_SUBI_L
+
+    BRA     PRINT_INVALID_MSG
+DO_SUBI_B
+    LEA     S_SUBI_B,A3
+    MOVE.B  #11,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_SUBI_W
+    LEA     S_SUBI_W,A3
+    MOVE.B  #11,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_SUBI_L
+    LEA     S_SUBI_L,A3
+    MOVE.B  #11,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_MULS_W
+    LEA     S_MULS_W,A3
+    MOVE.B  #12,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS   
+DO_MULU_W
+    LEA     S_MULU_W,A3
+    MOVE.B  #13,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS   
+DO_DIVU_W
+    LEA     S_DIVU,A3
+    MOVE.B  #14,D7
+    JSR     WRITE
+    RTS
+DO_LEA
+    LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
+    MOVE.B  #15,D7       * Store key for op code for EA module
+
+    JSR     WRITE
+    RTS
+DO_CLR
+    LEA     S_CLR,A3
+    MOVE.B  #16,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_AND_B
+    LEA     S_AND_B,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_AND_W
+    LEA     S_AND_W,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_AND_L
+    LEA     S_AND_L,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_OR_B
+    LEA     S_OR_B,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_W
+    LEA     S_OR_W,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_L
+    LEA     S_OR_L,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+
+DO_LSL_B
+    LEA     S_LSL_B,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSL_W
+    LEA     S_LSL_W,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSL_L
+    LEA     S_LSL_L,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSR_B
+    LEA     S_LSR_B,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_LSR_W
+    LEA     S_LSR_W,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_LSR_L
+    LEA     S_LSR_L,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_ASR_B
+    LEA     S_ASR_B,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASR_W
+    LEA     S_ASR_W,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASR_L
+    LEA     S_ASR_L,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASL_B
+    LEA     S_ASL_B,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ASL_W
+    LEA     S_ASL_W,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ASL_L
+    LEA     S_ASL_L,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ROL_B
+    LEA     S_ROL_B,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROL_W
+    LEA     S_ROL_W,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROL_L
+    LEA     S_ROL_L,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROR_B
+    LEA     S_ROR_B,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
+DO_ROR_W
+    LEA     S_ROR_W,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
+DO_ROR_L
+    LEA     S_ROR_L,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
+DO_CMP_B
+    LEA     S_CMP_B,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_CMP_W
+    LEA     S_CMP_W,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_CMP_L
+    LEA     S_CMP_L,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    RTS
+DO_BGT
+    LEA     S_BGT,A3
+    MOVE.B  #26,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BLE
+    LEA     S_BLE,A3
     MOVE.B  #27,D7
-    ** Eventually, NOCK will be called here
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BCC
+    LEA     S_BCC,A3
+    MOVE.B  #28,D7
+    ** EA Module will be called now
+    JSR     WRITE
+    RTS
+DO_JSR      **JSR 29?? 
+    LEA     S_JSR,A3
+    MOVE.B  #29,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_RTS
+    LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
+    MOVE.B  #30,D7      * Store key for op code for EA module
+
     JSR     WRITE
     RTS
 PRINT_INVALID_MSG
     LEA     INVALID,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+     ** EA Module will be called now
     RTS
 PRINT_OIOO_ERROR
     LEA     BAD_OIOO,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 PRINT_COME_BACK_MSG
     LEA     COMEBK,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+     ** EA Module will be called now
     RTS
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
@@ -349,7 +761,9 @@ WRITE_LOOP
     *MOVE.B  #$2C,(A4)+     * Write the null terminator before exiting
     RTS                     * Executes once null terminator was reached
     
-;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+*------------------------------- END OF SUB-ROUTINE SECTION ----------------------------------------
+***************************************************************************************
+*-------------------------------- STRING CONSTANTS SECTION ------------------------------------
 
 *** ML constants for op-codes without EA modes (NOP, RTS)
 CODE_NOP    EQU     $4E71
@@ -365,8 +779,12 @@ S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
 S_JSR       DC.B    'JSR            ',0
 S_ADDQ      DC.B    'ADDQ           ',0
-S_ADDI      DC.B    'ADDI           ',0
-S_SUBI      DC.B    'SUBI           ',0
+S_ADDI_B    DC.B    'ADDI.B         ',0
+S_ADDI_W    DC.B    'ADDI.W         ',0
+S_ADDI_L    DC.B    'ADDI.L         ',0
+S_SUBI_B    DC.B    'SUBI.B         ',0
+S_SUBI_W    DC.B    'SUBI.W         ',0
+S_SUBI_L    DC.B    'SUBI.L         ',0
 S_CLR       DC.B    'CLR            ',0
 S_LEA       DC.B    'LEA            ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
@@ -374,10 +792,10 @@ S_BGT       DC.B    'BGT            ',0
 S_BLE       DC.B    'BLE            ',0
 S_BCC       DC.B    'BCC            ',0
 S_MOVE_B    DC.B    'MOVE.B         ',0
-S_MOVEA_W   DC.B    'MOVEA.W        ',0
 S_MOVE_W    DC.B    'MOVE.W         ',0
-S_MOVEA_L   DC.B    'MOVEA.L        ',0
 S_MOVE_L    DC.B    'MOVE.L         ',0
+S_MOVEA_W   DC.B    'MOVEA.W        ',0
+S_MOVEA_L   DC.B    'MOVEA.L        ',0
 * ----- Strings from RIGHT (1) branch --------- *
 S_DIVU      DC.B    'DIVU.W         ',0
 S_OR        DC.B    'OR             ',0
@@ -385,8 +803,6 @@ S_SUB       DC.B    'SUB            ',0
 S_CMP_B     DC.B    'CMP.B          ',0
 S_CMP_W     DC.B    'CMP.W          ',0
 S_CMP_L     DC.B    'CMP.L          ',0
-S_MULU      DC.B    'MULU           ',0
-S_MULS      DC.B    'MULS           ',0
 S_AND       DC.B    'AND            ',0
 S_ADD       DC.B    'ADD            ',0
 S_ADDA      DC.B    'ADDA           ',0
@@ -396,18 +812,51 @@ S_ROR       DC.B    'ROR            ',0
 S_ROL       DC.B    'ROL            ',0
 S_ASL       DC.B    'ASL            ',0
 S_ASR       DC.B    'ASR            ',0
-
-*** Strings for messages 
+S_OR_B      DC.B    'OR.B           ',0
+S_OR_W      DC.B    'OR.W           ',0
+S_OR_L      DC.B    'OR.L           ',0
+S_ADDA_W    DC.B    'ADDA.W         ',0
+S_ADDA_L    DC.B    'ADDA.L         ',0
+S_ADD_B     DC.B    'ADD.B          ',0
+S_ADD_W     DC.B    'ADD.W          ',0
+S_ADD_L     DC.B    'ADD.L          ',0
+S_SUB_B     DC.B    'SUB.B          ',0
+S_SUB_W     DC.B    'SUB.W          ',0
+S_SUB_L     DC.B    'SUB.L          ',0
+S_AND_B     DC.B    'AND.B          ',0
+S_AND_W     DC.B    'AND.W          ',0
+S_AND_L     DC.B    'AND.L          ',0
+S_MULS_W    DC.B    'MULS.W         ',0
+S_MULU_W    DC.B    'MULU.W         ',0
+S_LSL_B     DC.B    'LSL.B          ',0
+S_LSL_W     DC.B    'LSL.W          ',0
+S_LSL_L     DC.B    'LSL.L          ',0
+S_LSR_B     DC.B    'LSR.B          ',0
+S_LSR_W     DC.B    'LSR.W          ',0
+S_LSR_L     DC.B    'LSR.L          ',0
+S_ROL_B     DC.B    'ROL.B          ',0
+S_ROL_W     DC.B    'ROL.W          ',0
+S_ROL_L     DC.B    'ROL.L          ',0
+S_ROR_B     DC.B    'ROR.B          ',0
+S_ROR_W     DC.B    'ROR.W          ',0
+S_ROR_L     DC.B    'ROR.L          ',0
+S_ASL_B     DC.B    'ASL.B          ',0
+S_ASL_W     DC.B    'ASL.W          ',0
+S_ASL_L     DC.B    'ASL.L          ',0
+S_ASR_B     DC.B    'ASR.B          ',0
+S_ASR_W     DC.B    'ASR.W          ',0
+S_ASR_L     DC.B    'ASR.L          ',0
+* ---- Strings for messages ----- 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 
 BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 
-*** Mask constants 
+*------------------------------- END OF STRING CONSTANTS SECTION ------------------------------
+***************************************************************************************
+*-------------------------------- MASK CONSTANTS SECTION ------------------------------------
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
-BYTE_MASK       EQU     %0000000000000000       * Not sure if this is needed
-WORD_MASK       EQU     %0000000001000000       * not sure if this is needed
-LONG_MASK       EQU     %0000000010000000       * not sure if this is needed
+ADDSUBI_S_MASK  EQU     %0000000011000000       * To determine the size
 CLR_MASK        EQU     %0000111100000000
 LEA_MASK        EQU     %0000000111000000
 Bcc_MASK        EQU     %0000111100000000
@@ -415,6 +864,12 @@ Bcc_MASK        EQU     %0000111100000000
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
 CMP_MASK        EQU     %1111000011000000
+DIVU_MASK       EQU     %0000000111000000
+ADD_MASK        EQU     %0000000111000000
+SUB_MASK        EQU     %0000000111000000
+AND_MM_MASK     EQU     %0000000111000000
+R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
+ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 

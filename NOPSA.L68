@@ -1,0 +1,79 @@
+00000300 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 5/28/2018 7:33:07 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : NOPs
+00000000                             3  * Written by : Clayton Snyder, Audrey Chae (Toucans)
+00000000                             4  * Date       : 5/19/2018
+00000000                             5  * Description: Testing file for 68k disassembler
+00000000                             6  *-----------------------------------------------------------
+00000300                             7      ORG    $0300
+00000300                             8  START:                  ; first instruction of program
+00000300  4EB9 00000306              9       JSR HAI
+00000306                            10  HAI
+00000306  4E71                      11       NOP
+00000308  1802                      12       MOVE.B  D2,D4
+0000030A  2A00                      13       MOVE.L  D0,D5
+0000030C  3E03                      14       MOVE.W  D3,D7
+0000030E  4E71                      15       NOP
+00000310  4E71                      16       NOP
+00000312  4E71                      17       NOP
+00000314  4E71                      18       NOP
+00000316  4E71                      19       NOP
+00000318  1201                      20       MOVE.B  D1,D1
+0000031A  1805                      21       MOVE.B  D5,D4
+0000031C  1407                      22       MOVE.B  D7,D2
+0000031E                            23      
+0000031E                            24      
+0000031E                            25      
+0000031E                            26      
+0000031E                            27      
+0000031E  1802                      28      MOVE.B  D2,D4
+00000320  0405 0011                 29      SUBI.B  #$11,D5
+00000324  B03C 0011                 30      CMP.B   #$11,D0
+00000328  4245                      31      CLR     D5
+0000032A  4E75                      32      RTS
+0000032C  45F9 DC00FF00             33      LEA $DC00FF00,A2
+00000332  7EFF                      34      MOVEQ   #$FF,D7
+00000334                            35     
+00000334  B441                      36      CMP.W     D1,D2
+00000336  6ECE                      37      BGT     HAI
+00000338  B481                      38      CMP.L     D1,D2
+0000033A  6FCA                      39      BLE     HAI
+0000033C  B401                      40      CMP.B     D1,D2
+0000033E  64C6                      41      BCC     HAI  
+00000340  1602                      42      MOVE.B  D2,D3
+00000342  2803                      43      MOVE.L  D3,D4
+00000344  3A04                      44      MOVE.W  D4,D5
+00000346  8AC3                      45      DIVU.W  D3,D5
+00000348  3652                      46      MOVEA.W (A2),A3
+0000034A  2A52                      47      MOVEA.L (A2),A5
+0000034C  8401                      48      OR.B    D1,D2
+0000034E  8642                      49      OR.W    D2,D3
+00000350  8283                      50      OR.L    D3,D1
+00000352  D602                      51      ADD.B   D2,D3
+00000354  D243                      52      ADD.W   D3,D1
+00000356  D483                      53      ADD.L   D3,D2
+00000358  D8CA                      54      ADDA.W  A2,A4
+0000035A  D7CC                      55      ADDA.L  A4,A3
+0000035C                            56  
+0000035C  9602                      57      SUB.B   D2,D3
+0000035E  9243                      58      SUB.W   D3,D1
+00000360  9483                      59      SUB.L   D3,D2
+00000362                            60      
+00000362  4E71                      61      NOP
+00000364  4E71                      62      NOP
+00000366  4E71                      63      NOP
+00000368                            64      
+00000368                            65      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+HAI                 306
+START               300
