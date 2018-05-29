@@ -48,6 +48,11 @@ HAI
     OR.B    D1,D2
     OR.W    D2,D3
     OR.L    D3,D1
+    ADD.B   D2,D3
+    ADD.W   D3,D1
+    ADD.L   D3,D2
+    ADDA.W  A2,A4
+    ADDA.L  A4,A3
     NOP
     NOP
     NOP

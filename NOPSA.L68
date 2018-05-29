@@ -1,6 +1,6 @@
 00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/28/2018 5:16:55 PM
+Created On: 5/28/2018 6:44:04 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : NOPs
@@ -52,11 +52,16 @@ Created On: 5/28/2018 5:16:55 PM
 0000034C  8401                      48      OR.B    D1,D2
 0000034E  8642                      49      OR.W    D2,D3
 00000350  8283                      50      OR.L    D3,D1
-00000352  4E71                      51      NOP
-00000354  4E71                      52      NOP
-00000356  4E71                      53      NOP
-00000358                            54      
-00000358                            55      END    START        ; last line of source
+00000352  D602                      51      ADD.B   D2,D3
+00000354  D243                      52      ADD.W   D3,D1
+00000356  D483                      53      ADD.L   D3,D2
+00000358  D8CA                      54      ADDA.W  A2,A4
+0000035A  D7CC                      55      ADDA.L  A4,A3
+0000035C  4E71                      56      NOP
+0000035E  4E71                      57      NOP
+00000360  4E71                      58      NOP
+00000362                            59      
+00000362                            60      END    START        ; last line of source
 
 No errors detected
 No warnings generated

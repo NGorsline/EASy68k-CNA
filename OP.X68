@@ -175,7 +175,7 @@ IOOO_BRA                        * Logic for OR, DIVU
     CMP.W   #$0180,D2           * Is it a long word operation for Dn V <ea> --> <ea>
     BEQ.W   DO_OR_L
 
-    BRA     PRINT_COME_BACK_MSG *!! COME BACK TO THIS
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 
 IOOI_BRA                        * Logic for SUB
     BRA     PRINT_COME_BACK_MSG
@@ -198,7 +198,30 @@ IOII_BRA                        * Logic for CMP
 IIOO_BRA                        * Logic for AND,MULS, MULU
     BRA     PRINT_COME_BACK_MSG
 IIOI_BRA                        * Logic for ADDA, ADD, 
-    BRA     PRINT_COME_BACK_MSG
+    MOVE    #ADD_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$00C0,D2           * first check if it's ADDA.W
+    BEQ     DO_ADDA_W
+
+    CMP.W   #$01C0,D2           * first check if it's ADDA.L
+    BEQ     DO_ADDA_L
+    * Not ADDA? check for all cases of ADD
+    CMP.W   #$0000,D2           * Is it ADD.B for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_B
+    CMP.W   #$0100,D2           * Is it ADD.B for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_B
+
+    CMP.W   #$0040,D2           * Is it ADD.W for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_W
+    CMP.W   #$0140,D2           * Is it ADD.W for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_W
+
+    CMP.W   #$0080,D2           * Is it ADD.L for <ea> + Dn --> Dn ?
+    BEQ     DO_ADD_L
+    CMP.W   #$0180,D2           * Is it ADD.L for Dn + <ea> --> <ea> ? 
+    BEQ     DO_ADD_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
     BRA     PRINT_COME_BACK_MSG
 *------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
@@ -233,7 +256,6 @@ DO_MOVE_L
     JSR     WRITE
     JSR     MOVE_EA
     RTS
-
 DO_BCC_CASE
     MOVE.W  #Bcc_MASK,D2
     AND     D5,D2
@@ -247,11 +269,41 @@ DO_BCC_CASE
     BEQ.W   DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
+DO_ADD_B
+    LEA     S_ADD_B,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADD_W
+    LEA     S_ADD_W,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADD_L
+    LEA     S_ADD_L,A3
+    MOVE.B  #6,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDA_W
+    LEA     S_ADDA_W,A3
+    MOVE.B  #7,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDA_L
+    LEA     S_ADDA_L,A3
+    MOVE.B  #7,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
 DO_ADDI
     LEA     S_ADDI,A3
     MOVE.B  #8,D7
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_DIVU_W
     LEA     S_DIVU,A3
@@ -276,30 +328,32 @@ DO_OR_L
 DO_BGT
     LEA     S_BGT,A3
     MOVE.B  #26,D7
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_BLE
     LEA     S_BLE,A3
     MOVE.B  #27,D7
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_BCC
     LEA     S_BCC,A3
     MOVE.B  #28,D7
-    ** Eventually, EA Module will be called here
+    ** EA Module will be called now
     JSR     WRITE
     RTS
 DO_CMP_B
     LEA     S_CMP_B,A3
     MOVE.B  #25,D7
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_CMP_W
     LEA     S_CMP_W,A3
     MOVE.B  #25,D7
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_CMP_L
     LEA     S_CMP_L,A3
@@ -439,6 +493,12 @@ S_ASR       DC.B    'ASR            ',0
 S_OR_B      DC.B    'OR.B           ',0
 S_OR_W      DC.B    'OR.W           ',0
 S_OR_L      DC.B    'OR.L           ',0
+S_ADDA_W    DC.B    'ADDA.W         ',0
+S_ADDA_L    DC.B    'ADDA.L         ',0
+S_ADD_B     DC.B    'ADD.B          ',0
+S_ADD_W     DC.B    'ADD.W          ',0
+S_ADD_L     DC.B    'ADD.L          ',0
+
 *** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 
@@ -458,6 +518,7 @@ MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
 CMP_MASK        EQU     %1111000011000000
 DIVU_MASK       EQU     %0000000111000000
+ADD_MASK        EQU     %0000000111000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 
