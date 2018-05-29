@@ -265,11 +265,93 @@ IIOI_BRA                        * Logic for ADDA, ADD,
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #R_MODE_MASK,D2     * Initial rotation to differentiate between LSd, ROd, and ASd
+    AND.W   D5,D2
+    CMP.W   #$0008,D2           * Is it LSd? (M = 01)
+    BEQ     DO_LSd
+
+    CMP.W   #$0018,D2           * Is it ROd? (M = 11)
+    BEQ     DO_ROd
+
+    CMP.W   #$0000,D2           * Is it ASd? (M = 00)
+    BEQ     DO_ASd
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 *------------------------------- END OF LEFT TREE ----------------------------------------
 ***************************************************************************************
 *-------------------------------- SUB-ROUTINE SECTION ------------------------------------
+DO_LSd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * LSL.B 
+    BEQ     DO_LSL_B
 
+    CMP.W   #$0140,D2           * LSL.W 
+    BEQ     DO_LSL_W
+
+    CMP.W   #$0180,D2           * LSL.L
+    BEQ     DO_LSL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * LSR.B 
+    BEQ     DO_LSR_B
+
+    CMP.W   #$0040,D2           * LSR.W 
+    BEQ     DO_LSR_W
+
+    CMP.W   #$0080,D2           * LSR.L
+    BEQ     DO_LSR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+DO_ROd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * ROL.B 
+    BEQ     DO_ROL_B
+
+    CMP.W   #$0140,D2           * ROL.W 
+    BEQ     DO_ROL_W
+
+    CMP.W   #$0180,D2           * ROL.L
+    BEQ     DO_ROL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * ROR.B 
+    BEQ     DO_ROR_B
+
+    CMP.W   #$0040,D2           * ROR.W 
+    BEQ     DO_ROR_W
+
+    CMP.W   #$0080,D2           * ROR.L
+    BEQ     DO_ROR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+DO_ASd
+    MOVE.W  #ROTATION_MASK,D2   * Now need to find size and direction
+    AND.W   D5,D2
+    *-- Starting left checks --*
+    CMP.W   #$0100,D2           * ASL.B 
+    BEQ     DO_ASL_B
+
+    CMP.W   #$0140,D2           * ASL.W 
+    BEQ     DO_ASL_W
+
+    CMP.W   #$0180,D2           * ASL.L
+    BEQ     DO_ASL_L
+
+    *-- Starting right checks --*
+    CMP.W   #$0000,D2           * ASR.B 
+    BEQ     DO_ASR_B
+
+    CMP.W   #$0040,D2           * ASR.W 
+    BEQ     DO_ASR_W
+
+    CMP.W   #$0080,D2           * ASR.L
+    BEQ     DO_ASR_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
     MOVE.B  #1,D7       * Store key for op code for EA module
@@ -460,8 +542,96 @@ DO_OR_L
     JSR     WRITE
     RTS
 
-* [MODULE 19-24 (rotation commands) HERE]   
-
+DO_LSL_B
+    LEA     S_LSL_B,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSL_W
+    LEA     S_LSL_W,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSL_L
+    LEA     S_LSL_L,A3
+    MOVE.B  #19,D7
+    JSR     WRITE
+    RTS
+DO_LSR_B
+    LEA     S_LSR_B,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_LSR_W
+    LEA     S_LSR_W,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_LSR_L
+    LEA     S_LSR_L,A3
+    MOVE.B  #20,D7
+    JSR     WRITE
+    RTS
+DO_ASR_B
+    LEA     S_ASR_B,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASR_W
+    LEA     S_ASR_W,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASR_L
+    LEA     S_ASR_L,A3
+    MOVE.B  #21,D7
+    JSR     WRITE
+    RTS
+DO_ASL_B
+    LEA     S_ASL_B,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ASL_W
+    LEA     S_ASL_W,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ASL_L
+    LEA     S_ASL_L,A3
+    MOVE.B  #22,D7
+    JSR     WRITE
+    RTS
+DO_ROL_B
+    LEA     S_ROL_B,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROL_W
+    LEA     S_ROL_W,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROL_L
+    LEA     S_ROL_L,A3
+    MOVE.B  #23,D7
+    JSR     WRITE
+    RTS
+DO_ROR_B
+    LEA     S_ROR_B,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
+DO_ROR_W
+    LEA     S_ROR_W,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
+DO_ROR_L
+    LEA     S_ROR_L,A3
+    MOVE.B  #24,D7
+    JSR     WRITE
+    RTS
 DO_CMP_B
     LEA     S_CMP_B,A3
     MOVE.B  #25,D7
@@ -601,7 +771,24 @@ S_AND_W     DC.B    'AND.W          ',0
 S_AND_L     DC.B    'AND.L          ',0
 S_MULS_W    DC.B    'MULS.W         ',0
 S_MULU_W    DC.B    'MULU.W         ',0
-
+S_LSL_B     DC.B    'LSL.B          ',0
+S_LSL_W     DC.B    'LSL.W          ',0
+S_LSL_L     DC.B    'LSL.L          ',0
+S_LSR_B     DC.B    'LSR.B          ',0
+S_LSR_W     DC.B    'LSR.W          ',0
+S_LSR_L     DC.B    'LSR.L          ',0
+S_ROL_B     DC.B    'ROL.B          ',0
+S_ROL_W     DC.B    'ROL.W          ',0
+S_ROL_L     DC.B    'ROL.L          ',0
+S_ROR_B     DC.B    'ROR.B          ',0
+S_ROR_W     DC.B    'ROR.W          ',0
+S_ROR_L     DC.B    'ROR.L          ',0
+S_ASL_B     DC.B    'ASL.B          ',0
+S_ASL_W     DC.B    'ASL.W          ',0
+S_ASL_L     DC.B    'ASL.L          ',0
+S_ASR_B     DC.B    'ASR.B          ',0
+S_ASR_W     DC.B    'ASR.W          ',0
+S_ASR_L     DC.B    'ASR.L          ',0
 * ---- Strings for messages ----- 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 
@@ -623,6 +810,8 @@ DIVU_MASK       EQU     %0000000111000000
 ADD_MASK        EQU     %0000000111000000
 SUB_MASK        EQU     %0000000111000000
 AND_MM_MASK     EQU     %0000000111000000
+R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
+ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 

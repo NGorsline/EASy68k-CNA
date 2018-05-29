@@ -65,6 +65,31 @@ HAI
     MULS.W  D2,D4
     MULU.W  D1,D3
 
+    LSL.B   D1,D2
+    LSL.W   D2,D3
+    LSL.L   D3,D4
+
+    LSR.B   D1,D2
+    LSR.W   D2,D3
+    LSR.L   D3,D4
+
+    ASL.B   D1,D2
+    ASL.W   D2,D3
+    ASL.L   D3,D4
+
+    ASR.B   D1,D2
+    ASR.W   D2,D3
+    ASR.L   D3,D4
+
+    ROL.B   D1,D2
+    ROL.W   D2,D3
+    ROL.L   D3,D4
+
+    ROR.B   D1,D2
+    ROR.W   D2,D3
+    ROR.L   D3,D4
+
+
     NOP
     NOP
     NOP
