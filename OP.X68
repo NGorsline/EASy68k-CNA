@@ -31,7 +31,7 @@ OP_DECODE
     BRA     DO_NOP
     RTS * Return to I/O module (temporary; will go to EA module eventually)
     
-* ----------------------BEGIN NARROWING THE LEFT BRANCH OF THE OPCODE SELECTIONS ----------
+* ----------------------BEGINNING OF LEFT BRANCH OF OPCODE SELECTIONS -----------------
 OXXX_BRA
     BTST.L  #14,D5              * Test the second bit 
     BEQ     OOXX_BRA            * Branch to opcodes starting with 00
@@ -122,7 +122,9 @@ OIOO_BRA
     BEQ     DO_LEA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
-*------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
+*------------------------------- END OF LEFT TREE ----------------------------------------
+***************************************************************************************
+* ----------------------BEGINNING OF RIGHT BRANCH OF OPCODE SELECTIONS -------------------
 IXXX_BRA 
     BTST.L  #14,D5              * Test the second bit 
     BEQ     IOXX_BRA            * Branch to opcodes starting with 10
@@ -264,8 +266,10 @@ IIOI_BRA                        * Logic for ADDA, ADD,
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
     BRA     PRINT_COME_BACK_MSG
-*------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
-* TODO: organize these in order of their number 
+*------------------------------- END OF LEFT TREE ----------------------------------------
+***************************************************************************************
+*-------------------------------- SUB-ROUTINE SECTION ------------------------------------
+
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
     MOVE.B  #1,D7       * Store key for op code for EA module
@@ -326,7 +330,9 @@ DO_BCC_CASE
     BEQ     DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
-* !! MODULE #5 -- MOVEM HERE !!
+
+* [MODULE #5 -- MOVEM HERE]
+
 DO_ADD_B
     LEA     S_ADD_B,A3
     MOVE.B  #6,D7
@@ -453,7 +459,9 @@ DO_OR_L
     MOVE.B  #18,D7
     JSR     WRITE
     RTS
-* !! MODULE 19 - 24 NEEDED HERE !! (Rotation commands)
+
+* [MODULE 19-24 (rotation commands) HERE]   
+
 DO_CMP_B
     LEA     S_CMP_B,A3
     MOVE.B  #25,D7
@@ -501,25 +509,23 @@ DO_RTS
 
     JSR     WRITE
     RTS
-
-***** MESSAGES *******
 PRINT_INVALID_MSG
     LEA     INVALID,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+     ** EA Module will be called now
     RTS
 PRINT_OIOO_ERROR
     LEA     BAD_OIOO,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+    ** EA Module will be called now
     RTS
 PRINT_COME_BACK_MSG
     LEA     COMEBK,A3
     MOVE.B  #0,D7
-    ** Eventually, NOCK will be called here
     JSR     WRITE
+     ** EA Module will be called now
     RTS
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
@@ -532,7 +538,9 @@ WRITE_LOOP
     *MOVE.B  #$2C,(A4)+     * Write the null terminator before exiting
     RTS                     * Executes once null terminator was reached
     
-;; ~~~~~~~~STRING CONSTANTS~~~~~~~~
+*------------------------------- END OF SUB-ROUTINE SECTION ----------------------------------------
+***************************************************************************************
+*-------------------------------- STRING CONSTANTS SECTION ------------------------------------
 
 *** ML constants for op-codes without EA modes (NOP, RTS)
 CODE_NOP    EQU     $4E71
@@ -594,12 +602,14 @@ S_AND_L     DC.B    'AND.L          ',0
 S_MULS_W    DC.B    'MULS.W         ',0
 S_MULU_W    DC.B    'MULU.W         ',0
 
-*** Strings for messages 
+* ---- Strings for messages ----- 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
 COMEBK      DC.B    'Come back to me pls dont forget me',0 
 BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 
-*** Mask constants 
+*------------------------------- END OF STRING CONSTANTS SECTION ------------------------------
+***************************************************************************************
+*-------------------------------- MASK CONSTANTS SECTION ------------------------------------
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
 CLR_MASK        EQU     %0000111100000000
