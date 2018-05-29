@@ -41,7 +41,9 @@ MOVE_EA
     ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
     MOVE.L  D5,D0               * D0 will hold the mode
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+    MOVEM   D5,-(SP)
     JSR     DO_MODE             * Get source mode decoded and written to buffer
+    MOVEM   (SP)+,D5
     
     ** CURRENT BUFFER STATE: MOVE.x         Xn
     
@@ -144,12 +146,13 @@ ABS_WORD
     
     
 GW_HARD_DATA
+    BRA     LONG
     CMPI.B  #00,D1
     BEQ     BYTE
     CMPI.B  #01,D1
-    *BEQ     WORD
+    BEQ     WORD
     CMPI.B  #02,D1
-    *BEQ     LONG
+    BEQ     WORD
     
 BYTE
     MOVE.W  (A6)+,D5
@@ -160,18 +163,60 @@ BC_LOOP
     MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
     ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
     CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
-    BLT     DIG_CONVERT * skip past 
+    BLT     BDIG_CONVERT * skip past 
     ADDI.B  #$37,D2     * add $37 to get an ASCII letter
-    BRA     COND_CHECK  * skip digit conversion
-DIG_CONVERT
+    BRA     BCOND_CHECK  * skip digit conversion
+BDIG_CONVERT
     ADDI.B  #$30,D2     * add $30 to get an ASCII digit
-COND_CHECK
+BCOND_CHECK
     MOVE.B  D2,(A4)+    * write the converted ASCII byte
-    SUBI.B  #01,D2      * decrement the counter
+    SUBI.B  #01,D3      * decrement the counter
     CMP.B   #00,D3      * check if counter has gone to zero
     BGT     BC_LOOP     * if not, keep looping
     RTS
-    
+
+
+WORD
+    MOVE.W  (A6)+,D5
+    MOVE.B  #04,D3       * init counter for convert loop
+WC_LOOP
+    ROL.W   #04,D5      * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
+    ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
+    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
+    BLT     WDIG_CONVERT * skip past 
+    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
+    BRA     WCOND_CHECK  * skip digit conversion
+WDIG_CONVERT
+    ADDI.B  #$30,D2     * add $30 to get an ASCII digit
+WCOND_CHECK
+    MOVE.B  D2,(A4)+    * write the converted ASCII byte
+    SUBI.B  #01,D3      * decrement the counter
+    CMP.B   #00,D3      * check if counter has gone to zero
+    BGT     WC_LOOP     * if not, keep looping
+    RTS    
+
+
+LONG
+    MOVE.L  (A6)+,D5
+    MOVE.B  #08,D3       * init counter for convert loop
+LC_LOOP
+    ROL.L   #04,D5      * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
+    ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
+    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
+    BLT     LDIG_CONVERT * skip past 
+    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
+    BRA     LCOND_CHECK  * skip digit conversion
+LDIG_CONVERT
+    ADDI.B  #$30,D2     * add $30 to get an ASCII digit
+LCOND_CHECK
+    MOVE.B  D2,(A4)+    * write the converted ASCII byte
+    SUBI.B  #01,D3      * decrement the counter
+    CMP.B   #00,D3      * check if counter has gone to zero
+    BGT     LC_LOOP     * if not, keep looping
+    RTS
+
 
 *** MASKS
 THREE_LSB_MASK  EQU     %0000000000000111
@@ -180,6 +225,8 @@ THREE_LSB_MASK  EQU     %0000000000000111
 *??
 
     END    START        ; last line of source
+
+
 
 
 
