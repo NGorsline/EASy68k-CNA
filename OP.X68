@@ -98,7 +98,7 @@ OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
 OIOX_BRA
     BTST.L  #12,D5
     BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
-    BRA     DO_ADDQ     * ADDQ 
+    BRA     OIOI_BRA     * ADDQ
 OIIX_BRA
     *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
     BTST.L  #12,D5
@@ -121,7 +121,19 @@ OIOO_BRA
     CMP.W   #$01C0,D2              *EQUAL TO LEA?
     BEQ     DO_LEA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
+OIOI_BRA
+    MOVE.W  #ADDQ_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2               * IS IT ADDQ.B?
+    BEQ     DO_ADDQ_B
 
+    CMP.W   #$0040,D2               * IS IT ADDQ.W?
+    BEQ     DO_ADDQ_W
+
+    CMP.W   #$0080,D2               * IS IT ADDQ.L?
+    BEQ     DO_ADDQ_L
+
+    BRA     PRINT_INVALID_MSG
 *------------------------------- END OF LEFT TREE ----------------------------------------
 ***************************************************************************************
 * ----------------------BEGINNING OF RIGHT BRANCH OF OPCODE SELECTIONS -------------------
@@ -479,9 +491,20 @@ DO_ADDI_L
     JSR     WRITE
     ** EA Module will be called now
     RTS
-DO_ADDQ
-    *Check for full opcode for 11 and onwards. if invalid, print the message
-    LEA     S_ADDQ,A3
+DO_ADDQ_B
+    LEA     S_ADDQ_B,A3
+    MOVE.B  #9,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_ADDQ_W
+    LEA     S_ADDQ_W,A3
+    MOVE.B  #9,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_ADDQ_L
+    LEA     S_ADDQ_L,A3
     MOVE.B  #9,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
@@ -778,7 +801,9 @@ S_NOP       DC.B    'NOP            ',0
 S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
 S_JSR       DC.B    'JSR            ',0
-S_ADDQ      DC.B    'ADDQ           ',0
+S_ADDQ_B    DC.B    'ADDQ.B          ',0
+S_ADDQ_W    DC.B    'ADDQ.W          ',0
+S_ADDQ_L    DC.B    'ADDQ.L          ',0
 S_ADDI_B    DC.B    'ADDI.B         ',0
 S_ADDI_W    DC.B    'ADDI.W         ',0
 S_ADDI_L    DC.B    'ADDI.L         ',0
@@ -786,7 +811,7 @@ S_SUBI_B    DC.B    'SUBI.B         ',0
 S_SUBI_W    DC.B    'SUBI.W         ',0
 S_SUBI_L    DC.B    'SUBI.L         ',0
 S_CLR       DC.B    'CLR            ',0
-S_LEA       DC.B    'LEA            ',0
+S_LEA       DC.B    'LEA.L          ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
 S_BGT       DC.B    'BGT            ',0
 S_BLE       DC.B    'BLE            ',0
@@ -860,7 +885,7 @@ ADDSUBI_S_MASK  EQU     %0000000011000000       * To determine the size
 CLR_MASK        EQU     %0000111100000000
 LEA_MASK        EQU     %0000000111000000
 Bcc_MASK        EQU     %0000111100000000
-
+ADDQ_MASK       EQU     %0000000011000000
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
 CMP_MASK        EQU     %1111000011000000
