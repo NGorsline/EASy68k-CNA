@@ -80,6 +80,10 @@ DO_MODE
     ** HERE: check for non-required EA modes (101, 110, 111 w/ 010 in Xn, 111 w/ 011 in Xn)
     ** if found, branch to "unsupported EA mode" branch
     
+    * assume mode is 111, check Xn for immediate data or absolute address
+    CMP.B   #04,D6
+    BEQ     IMM_DATA
+    
     RTS
 
 
@@ -123,7 +127,10 @@ AR_PREDEC   *** Mode 4
     RTS
 
 IMM_DATA
-    * HOW TO DO THIS?
+    MOVE.B  #'#',(A4)+
+    MOVE.B  #'$',(A4)+
+    JSR     GW_HARD_DATA
+    RTS
 
 ABS_LONG
     * GET LONG FROM (A6)+
@@ -135,6 +142,36 @@ ABS_WORD
     * WRITE $
     * WRITE DATA GOT FROM A6
     
+    
+GW_HARD_DATA
+    CMPI.B  #00,D1
+    BEQ     BYTE
+    CMPI.B  #01,D1
+    *BEQ     WORD
+    CMPI.B  #02,D1
+    *BEQ     LONG
+    
+BYTE
+    MOVE.W  (A6)+,D5
+    MOVE.B  #02,D3      * init counter for convert loop
+    ROL.W   #08,D5      * rotate MSHB to LSHB (twice, for writing only byte)
+BC_LOOP
+    ROL.W   #04,D5      * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
+    ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
+    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
+    BLT     DIG_CONVERT * skip past 
+    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
+    BRA     COND_CHECK  * skip digit conversion
+DIG_CONVERT
+    ADDI.B  #$30,D2     * add $30 to get an ASCII digit
+COND_CHECK
+    MOVE.B  D2,(A4)+    * write the converted ASCII byte
+    SUBI.B  #01,D2      * decrement the counter
+    CMP.B   #00,D3      * check if counter has gone to zero
+    BGT     BC_LOOP     * if not, keep looping
+    RTS
+    
 
 *** MASKS
 THREE_LSB_MASK  EQU     %0000000000000111
@@ -143,6 +180,7 @@ THREE_LSB_MASK  EQU     %0000000000000111
 *??
 
     END    START        ; last line of source
+
 
 
 
