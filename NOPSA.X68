@@ -88,6 +88,12 @@ HAI
     ROR.B   D1,D2
     ROR.W   D2,D3
     ROR.L   D3,D4
+    * SUBI.B  #$11,D5         *this should give an invalid address error after SUBI.B until EA is fixed 
+    * SUBI.W  #$1111,D5
+    * SUBI.L  #$11111111,D5
+    * ADDI.B  #$11,D5
+    * ADDI.W  #$1111,D5
+    * ADDI.L  #$11111111,D5
 
 
     NOP

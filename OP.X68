@@ -446,7 +446,32 @@ DO_ADDA_L
     ** EA Module will be called now
     RTS
 DO_ADDI
-    LEA     S_ADDI,A3
+    MOVE.W  #ADDSUBI_S_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2       *is it ADDI.B?
+    BEQ     DO_ADDI_B
+
+    CMP.W   #$0040,D2       *is it ADDI.W?
+    BEQ     DO_ADDI_W
+
+    CMP.W   #$0080,D2       *is it ADDI.L?
+    BEQ     DO_ADDI_L
+
+    BRA     PRINT_INVALID_MSG
+DO_ADDI_B
+    LEA     S_ADDI_B,A3
+    MOVE.B  #8,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDI_W
+    LEA     S_ADDI_W,A3
+    MOVE.B  #8,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_ADDI_L
+    LEA     S_ADDI_L,A3
     MOVE.B  #8,D7
     JSR     WRITE
     ** EA Module will be called now
@@ -474,10 +499,35 @@ DO_SUB_L
     JSR     WRITE
     RTS
 DO_SUBI
-    LEA     S_SUBI,A3
+    MOVE.W  #ADDSUBI_S_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2       *is it SUBI.B?
+    BEQ     DO_SUBI_B
+
+    CMP.W   #$0040,D2       *is it SUBI.W?
+    BEQ     DO_SUBI_W
+
+    CMP.W   #$0080,D2       *is it SUBI.L?
+    BEQ     DO_SUBI_L
+
+    BRA     PRINT_INVALID_MSG
+DO_SUBI_B
+    LEA     S_SUBI_B,A3
     MOVE.B  #11,D7
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_SUBI_W
+    LEA     S_SUBI_W,A3
+    MOVE.B  #11,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_SUBI_L
+    LEA     S_SUBI_L,A3
+    MOVE.B  #11,D7
+    JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_MULS_W
     LEA     S_MULS_W,A3
@@ -726,8 +776,12 @@ S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
 S_JSR       DC.B    'JSR            ',0
 S_ADDQ      DC.B    'ADDQ           ',0
-S_ADDI      DC.B    'ADDI           ',0
-S_SUBI      DC.B    'SUBI           ',0
+S_ADDI_B    DC.B    'ADDI.B         ',0
+S_ADDI_W    DC.B    'ADDI.W         ',0
+S_ADDI_L    DC.B    'ADDI.L         ',0
+S_SUBI_B    DC.B    'SUBI.B         ',0
+S_SUBI_W    DC.B    'SUBI.W         ',0
+S_SUBI_L    DC.B    'SUBI.L         ',0
 S_CLR       DC.B    'CLR            ',0
 S_LEA       DC.B    'LEA            ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
@@ -735,10 +789,10 @@ S_BGT       DC.B    'BGT            ',0
 S_BLE       DC.B    'BLE            ',0
 S_BCC       DC.B    'BCC            ',0
 S_MOVE_B    DC.B    'MOVE.B         ',0
-S_MOVEA_W   DC.B    'MOVEA.W        ',0
 S_MOVE_W    DC.B    'MOVE.W         ',0
-S_MOVEA_L   DC.B    'MOVEA.L        ',0
 S_MOVE_L    DC.B    'MOVE.L         ',0
+S_MOVEA_W   DC.B    'MOVEA.W        ',0
+S_MOVEA_L   DC.B    'MOVEA.L        ',0
 * ----- Strings from RIGHT (1) branch --------- *
 S_DIVU      DC.B    'DIVU.W         ',0
 S_OR        DC.B    'OR             ',0
@@ -799,6 +853,7 @@ BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 *-------------------------------- MASK CONSTANTS SECTION ------------------------------------
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
+ADDSUBI_S_MASK  EQU     %0000000011000000       * To determine the size
 CLR_MASK        EQU     %0000111100000000
 LEA_MASK        EQU     %0000000111000000
 Bcc_MASK        EQU     %0000111100000000
