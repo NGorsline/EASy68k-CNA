@@ -68,8 +68,9 @@ OOOO_BRA                        * tests for ADDI or SUBI
 OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
     MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
-    CMP.W   #$1000,D2           * is it a move byte?
-    BEQ     DO_MOVE_B           
+    CMP.W   #$1000,D2           * is it a byte?
+    BEQ     DO_MOVE_B  
+
     BRA     PRINT_INVALID_MSG   *neither MoveA or Move? BADDDD
 OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
     MOVE.W  #MOVEA_MASK,D2
@@ -79,8 +80,8 @@ OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
 
     MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
-    CMP.W   #$2000,D2           * is it a move word?
-    BEQ     DO_MOVE_W           
+    CMP.W   #$2000,D2           * is it a long word?
+    BEQ     DO_MOVE_L           
 
     BRA     PRINT_INVALID_MSG
 OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
@@ -91,14 +92,14 @@ OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
 
     MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
-    CMP.W   #$3000,D2           * is it a move long?
-    BEQ     DO_MOVE_L           
+    CMP.W   #$3000,D2           * is it a move word?
+    BEQ     DO_MOVE_W           
 
     BRA     PRINT_INVALID_MSG
 OIOX_BRA
     BTST.L  #12,D5
     BEQ     OIOO_BRA    * CLR, JSR, MOVEM, LEA   
-    BRA     DO_ADDQ     * ADDQ 
+    BRA     OIOI_BRA     * ADDQ
 OIIX_BRA
     *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
     BTST.L  #12,D5
@@ -111,17 +112,42 @@ OIOO_BRA
     CMP.W   #$0E80,D2    * Result of mask should be 0E80 if code is JSR
     BEQ     DO_JSR       *
 
-    MOVE.W  #CLR_MASK,D2
-    AND.W   D5,D2
-    CMP.W   #$0200,D2              * IS IT CLR?
-    BEQ     DO_CLR
-
     MOVE.W  #LEA_MASK,D2
     AND     D5,D2
     CMP.W   #$01C0,D2              *EQUAL TO LEA?
     BEQ     DO_LEA
-    BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
+    MOVE.W  #CLR_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0200,D2              * IS IT CLR.B?
+    BEQ     DO_CLR_B
+    CMP.W   #$0240,D2              * IS IT CLR.W?
+    BEQ     DO_CLR_W
+    CMP.W   #$0280,D2              * IS IT CLR.L?
+    BEQ     DO_CLR_L
+
+    MOVE.W  #MOVEM_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0880,D2               * Is it MOVEM.W?
+    BEQ     DO_MOVEM_W
+
+    CMP.W   #$08C0,D2               * Is it MOVEM.L?
+    BEQ     DO_MOVEM_L
+
+    BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
+OIOI_BRA
+    MOVE.W  #ADDQ_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$0000,D2               * IS IT ADDQ.B?
+    BEQ     DO_ADDQ_B
+
+    CMP.W   #$0040,D2               * IS IT ADDQ.W?
+    BEQ     DO_ADDQ_W
+
+    CMP.W   #$0080,D2               * IS IT ADDQ.L?
+    BEQ     DO_ADDQ_L
+
+    BRA     PRINT_INVALID_MSG
 *------------------------------- END OF LEFT TREE ----------------------------------------
 ***************************************************************************************
 * ----------------------BEGINNING OF RIGHT BRANCH OF OPCODE SELECTIONS -------------------
@@ -238,7 +264,7 @@ IIOO_BRA                        * Logic for AND,MULS, MULU
     BEQ     DO_AND_L
     CMP.W   #$0180,D2           * Is it AND.L for Dn ^ <ea> --> <ea>?
     BEQ     DO_AND_L
-
+    BRA     PRINT_INVALID_MSG   * No other opcodes for IOII 
 IIOI_BRA                        * Logic for ADDA, ADD, 
     MOVE.W  #ADD_MASK,D2
     AND.W   D5,D2
@@ -354,52 +380,51 @@ DO_ASd
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #1,D7       * Store key for op code for EA module
+    * MOVE.B  #1,D7       * Store key for op code for EA module
     ** Eventually, EA Module will be called here
     JSR     WRITE       * Jump to WRITE subroutine
     RTS                 * Return to I/O module 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
-    MOVE.B  #2,D7           * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
-    MOVE.B  #00,D1          * passing size code BYTE to EA
+    * MOVE.B  #2,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_W
     LEA     S_MOVE_W,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section b (which is a word)
-    MOVE.B  #01,D1          * passing size code WORD to EA    
+    *MOVE.B  #2,D7        
+    MOVE.B  #01,D7          * passing size code WORD to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_L
     LEA     S_MOVE_L,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
-    MOVE.B  #10,D1          * passing size code LONG to EA    
+    *MOVE.B  #2,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
-DO_MOVE
-    LEA     S_MOVE,A3       * come back to this, wtf is this
-    MOVE.B  #2,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
 DO_MOVEA_W
     LEA     S_MOVEA_W,A3
-    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
+    *MOVE.B  #3,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     MOVE_EA
     RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
-    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
+    MOVE.B  #3,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     MOVE_EA
     RTS
 DO_MOVEQ
     LEA     S_MOVEQ,A3
-    MOVE.B  #4,D7
+    *MOVE.B  #4,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_BCC_CASE
@@ -415,36 +440,50 @@ DO_BCC_CASE
     BEQ     DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
-
-* [MODULE #5 -- MOVEM HERE]
-
+DO_MOVEM_W
+    LEA     S_MOVEM_W,A3
+    *MOVE.B  #5,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
+    JSR     WRITE
+    RTS
+DO_MOVEM_L
+    LEA     S_MOVEM_L,A3
+    *MOVE.B  #5,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
+    JSR     WRITE
+    RTS
 DO_ADD_B
     LEA     S_ADD_B,A3
-    MOVE.B  #6,D7
+    *MOVE.B  #6,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADD_W
     LEA     S_ADD_W,A3
-    MOVE.B  #6,D7
+    *MOVE.B  #6,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADD_L
     LEA     S_ADD_L,A3
-    MOVE.B  #6,D7
+    *MOVE.B  #6,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDA_W
     LEA     S_ADDA_W,A3
-    MOVE.B  #7,D7
+    *MOVE.B  #7,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDA_L
     LEA     S_ADDA_L,A3
-    MOVE.B  #7,D7
+    *MOVE.B  #7,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
@@ -463,42 +502,62 @@ DO_ADDI
     BRA     PRINT_INVALID_MSG
 DO_ADDI_B
     LEA     S_ADDI_B,A3
-    MOVE.B  #8,D7
+    *MOVE.B  #8,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDI_W
     LEA     S_ADDI_W,A3
-    MOVE.B  #8,D7
+    *MOVE.B  #8,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDI_L
     LEA     S_ADDI_L,A3
-    MOVE.B  #8,D7
+    *MOVE.B  #8,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
-DO_ADDQ
-    *Check for full opcode for 11 and onwards. if invalid, print the message
-    LEA     S_ADDQ,A3
-    MOVE.B  #9,D7
+DO_ADDQ_B
+    LEA     S_ADDQ_B,A3
+    *MOVE.B  #9,D7
+     MOVE.B  #00,D7          * passing size code BYTE to EA
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_ADDQ_W
+    LEA     S_ADDQ_W,A3
+    *MOVE.B  #9,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_ADDQ_L
+    LEA     S_ADDQ_L,A3
+    *MOVE.B  #9,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_SUB_B
     LEA     S_SUB_B,A3
-    MOVE.B  #10,D7
+    *MOVE.B  #10,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     RTS
 DO_SUB_W
     LEA     S_SUB_W,A3
-    MOVE.B  #10,D7
+    *MOVE.B  #10,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_SUB_L
     LEA     S_SUB_L,A3
-    MOVE.B  #10,D7
+    *MOVE.B  #10,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_SUBI
@@ -516,190 +575,238 @@ DO_SUBI
     BRA     PRINT_INVALID_MSG
 DO_SUBI_B
     LEA     S_SUBI_B,A3
-    MOVE.B  #11,D7
+    *MOVE.B  #11,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_SUBI_W
     LEA     S_SUBI_W,A3
-    MOVE.B  #11,D7
+    *MOVE.B  #11,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_SUBI_L
     LEA     S_SUBI_L,A3
-    MOVE.B  #11,D7
+    *MOVE.B  #11,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_MULS_W
     LEA     S_MULS_W,A3
-    MOVE.B  #12,D7
+    *MOVE.B  #12,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS   
 DO_MULU_W
     LEA     S_MULU_W,A3
-    MOVE.B  #13,D7
+    *MOVE.B  #13,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS   
 DO_DIVU_W
     LEA     S_DIVU,A3
-    MOVE.B  #14,D7
+    *MOVE.B  #14,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_LEA
     LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #15,D7       * Store key for op code for EA module
-
+    *MOVE.B  #15,D7       * Store key for op code for EA module
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
-DO_CLR
-    LEA     S_CLR,A3
-    MOVE.B  #16,D7
-    ** Eventually, EA Module will be called here
+DO_CLR_B
+    LEA     S_CLR_B,A3
+    *MOVE.B  #16,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
+    ** Eventually, EA Module will be called here
+    RTS
+DO_CLR_W
+    LEA     S_CLR_W,A3
+    *MOVE.B  #16,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
+    JSR     WRITE
+    ** Eventually, EA Module will be called here
+    RTS
+DO_CLR_L
+    LEA     S_CLR_L,A3
+    *MOVE.B  #16,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
+    JSR     WRITE
+    ** Eventually, EA Module will be called here
     RTS
 DO_AND_B
     LEA     S_AND_B,A3
-    MOVE.B  #17,D7
+    *MOVE.B  #17,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_AND_W
     LEA     S_AND_W,A3
-    MOVE.B  #17,D7
+    *MOVE.B  #17,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_AND_L
     LEA     S_AND_L,A3
-    MOVE.B  #17,D7
+    *MOVE.B  #17,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_OR_B
     LEA     S_OR_B,A3
-    MOVE.B  #18,D7
+    *MOVE.B  #18,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_OR_W
     LEA     S_OR_W,A3
-    MOVE.B  #18,D7
+    *MOVE.B  #18,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_OR_L
     LEA     S_OR_L,A3
-    MOVE.B  #18,D7
+    *MOVE.B  #18,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 
 DO_LSL_B
     LEA     S_LSL_B,A3
-    MOVE.B  #19,D7
+    *MOVE.B  #19,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_LSL_W
     LEA     S_LSL_W,A3
-    MOVE.B  #19,D7
+    *MOVE.B  #19,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_LSL_L
     LEA     S_LSL_L,A3
-    MOVE.B  #19,D7
+    *MOVE.B  #19,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_LSR_B
     LEA     S_LSR_B,A3
-    MOVE.B  #20,D7
+    *MOVE.B  #20,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_LSR_W
     LEA     S_LSR_W,A3
-    MOVE.B  #20,D7
+    *MOVE.B  #20,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_LSR_L
     LEA     S_LSR_L,A3
-    MOVE.B  #20,D7
+    *MOVE.B  #20,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ASR_B
     LEA     S_ASR_B,A3
-    MOVE.B  #21,D7
+    *MOVE.B  #21,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ASR_W
     LEA     S_ASR_W,A3
-    MOVE.B  #21,D7
+    *MOVE.B  #21,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ASR_L
     LEA     S_ASR_L,A3
-    MOVE.B  #21,D7
+    *MOVE.B  #21,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ASL_B
     LEA     S_ASL_B,A3
-    MOVE.B  #22,D7
+    *MOVE.B  #22,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ASL_W
     LEA     S_ASL_W,A3
-    MOVE.B  #22,D7
+    *MOVE.B  #22,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ASL_L
     LEA     S_ASL_L,A3
-    MOVE.B  #22,D7
+    *MOVE.B  #22,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ROL_B
     LEA     S_ROL_B,A3
-    MOVE.B  #23,D7
+    *MOVE.B  #23,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ROL_W
     LEA     S_ROL_W,A3
-    MOVE.B  #23,D7
+    *MOVE.B  #23,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ROL_L
     LEA     S_ROL_L,A3
-    MOVE.B  #23,D7
+    *MOVE.B  #23,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ROR_B
     LEA     S_ROR_B,A3
-    MOVE.B  #24,D7
+    *MOVE.B  #24,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ROR_W
     LEA     S_ROR_W,A3
-    MOVE.B  #24,D7
+    *MOVE.B  #24,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ROR_L
     LEA     S_ROR_L,A3
-    MOVE.B  #24,D7
+    *MOVE.B  #24,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_CMP_B
     LEA     S_CMP_B,A3
-    MOVE.B  #25,D7
+    *MOVE.B  #25,D7
+    MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_CMP_W
     LEA     S_CMP_W,A3
-    MOVE.B  #25,D7
+    *MOVE.B  #25,D7
+    MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_CMP_L
     LEA     S_CMP_L,A3
-    MOVE.B  #25,D7
+    *MOVE.B  #25,D7
+    MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_BGT
@@ -778,15 +885,19 @@ S_NOP       DC.B    'NOP            ',0
 S_RTS       DC.B    'RTS            ',0
 S_MOVE      DC.B    'MOVE           ',0
 S_JSR       DC.B    'JSR            ',0
-S_ADDQ      DC.B    'ADDQ           ',0
+S_ADDQ_B    DC.B    'ADDQ.B         ',0
+S_ADDQ_W    DC.B    'ADDQ.W         ',0
+S_ADDQ_L    DC.B    'ADDQ.L         ',0
 S_ADDI_B    DC.B    'ADDI.B         ',0
 S_ADDI_W    DC.B    'ADDI.W         ',0
 S_ADDI_L    DC.B    'ADDI.L         ',0
 S_SUBI_B    DC.B    'SUBI.B         ',0
 S_SUBI_W    DC.B    'SUBI.W         ',0
 S_SUBI_L    DC.B    'SUBI.L         ',0
-S_CLR       DC.B    'CLR            ',0
-S_LEA       DC.B    'LEA            ',0
+S_CLR_B     DC.B    'CLR.B          ',0
+S_CLR_W     DC.B    'CLR.W          ',0
+S_CLR_L     DC.B    'CLR.L          ',0
+S_LEA       DC.B    'LEA.L          ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
 S_BGT       DC.B    'BGT            ',0
 S_BLE       DC.B    'BLE            ',0
@@ -796,6 +907,8 @@ S_MOVE_W    DC.B    'MOVE.W         ',0
 S_MOVE_L    DC.B    'MOVE.L         ',0
 S_MOVEA_W   DC.B    'MOVEA.W        ',0
 S_MOVEA_L   DC.B    'MOVEA.L        ',0
+S_MOVEM_W   DC.B    'MOVEM.W        ',0
+S_MOVEM_L   DC.B    'MOVEM.L        ',0
 * ----- Strings from RIGHT (1) branch --------- *
 S_DIVU      DC.B    'DIVU.W         ',0
 S_OR        DC.B    'OR             ',0
@@ -803,8 +916,6 @@ S_SUB       DC.B    'SUB            ',0
 S_CMP_B     DC.B    'CMP.B          ',0
 S_CMP_W     DC.B    'CMP.W          ',0
 S_CMP_L     DC.B    'CMP.L          ',0
-S_AND       DC.B    'AND            ',0
-S_ADD       DC.B    'ADD            ',0
 S_ADDA      DC.B    'ADDA           ',0
 S_LSR       DC.B    'LSR            ',0
 S_LSL       DC.B    'LSL            ',0
@@ -857,12 +968,13 @@ BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
 ADDSUBI_S_MASK  EQU     %0000000011000000       * To determine the size
-CLR_MASK        EQU     %0000111100000000
+CLR_MASK        EQU     %0000111111000000
 LEA_MASK        EQU     %0000000111000000
 Bcc_MASK        EQU     %0000111100000000
-
+ADDQ_MASK       EQU     %0000000011000000
 MOVEA_MASK      EQU     %0011000111000000
 MOVE_MASK       EQU     %0011000000000000
+MOVEM_MASK      EQU     %0000100011000000
 CMP_MASK        EQU     %1111000011000000
 DIVU_MASK       EQU     %0000000111000000
 ADD_MASK        EQU     %0000000111000000
