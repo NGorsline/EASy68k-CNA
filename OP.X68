@@ -75,8 +75,8 @@ OOOI_BRA                        * MOVE and MOVEA need to be handled here (B)
 OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
     MOVE.W  #MOVEA_MASK,D2
     AND.W   D5,D2
-    CMP.W   #$2040,D2           * is it a moveA word?
-    BEQ     DO_MOVEA_W          
+    CMP.W   #$2040,D2           * is it a moveA long?
+    BEQ     DO_MOVEA_L          
 
     MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
@@ -87,8 +87,8 @@ OOIO_BRA                        * MOVE and MOVEA need to be handled here (W)
 OOII_BRA                        * MOVE and MOVEA need to be handled here (L)
     MOVE.W  #MOVEA_MASK,D2
     AND.W   D5,D2
-    CMP.W   #$3040,D2           * is it a moveA long?
-    BEQ     DO_MOVEA_L          
+    CMP.W   #$3040,D2           * is it a moveA word?
+    BEQ     DO_MOVEA_W          
 
     MOVE.W  #MOVE_MASK,D2
     AND.W   D5,D2
