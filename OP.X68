@@ -178,7 +178,7 @@ IOOO_BRA                        * Logic for OR, DIVU
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 
 IOOI_BRA                        * Logic for SUB
-    MOVE     #SUB_MASK,D2
+    MOVE.W   #SUB_MASK,D2
     AND.W    D5,D2
     CMP.W    #$0000,D2          * is it SUB.B for Dn-<ea> --> Dn? 
     BEQ      DO_SUB_B
@@ -198,7 +198,7 @@ IOOI_BRA                        * Logic for SUB
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 
 IOII_BRA                        * Logic for CMP
-    MOVE    #CMP_MASK,D2        * Temporarily load mask into D2
+    MOVE.W  #CMP_MASK,D2        * Temporarily load mask into D2
     AND.W   D5,D2
     CMP.W   #$B000,D2           * Check if it's CMP.B
     BEQ     DO_CMP_B           
@@ -214,9 +214,31 @@ IOII_BRA                        * Logic for CMP
     BRA     PRINT_INVALID_MSG   * No other opcodes for IOII 
 
 IIOO_BRA                        * Logic for AND,MULS, MULU
-    BRA     PRINT_COME_BACK_MSG
+    MOVE.W  #AND_MM_MASK,D2
+    AND.W   D5,D2
+    CMP.W   #$01C0,D2           * Is it MULS.W?
+    BEQ     DO_MULS_W
+
+    CMP.W   #$00C0,D2          * Is it MULU.W?
+    BEQ     DO_MULU_W
+
+    CMP.W   #$0000,D2           * Is it AND.B for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_B
+    CMP.W   #$0100,D2           * Is it AND.B for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_B
+
+    CMP.W   #$0040,D2           * Is it AND.W for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_W
+    CMP.W   #$0140,D2           * Is it AND.W for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_W
+
+    CMP.W   #$0080,D2           * Is it AND.L for <ea> ^ Dn --> Dn?
+    BEQ     DO_AND_L
+    CMP.W   #$0180,D2           * Is it AND.L for Dn ^ <ea> --> <ea>?
+    BEQ     DO_AND_L
+
 IIOI_BRA                        * Logic for ADDA, ADD, 
-    MOVE    #ADD_MASK,D2
+    MOVE.W  #ADD_MASK,D2
     AND.W   D5,D2
     CMP.W   #$00C0,D2           * first check if it's ADDA.W
     BEQ     DO_ADDA_W
@@ -244,17 +266,17 @@ IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
     BRA     PRINT_COME_BACK_MSG
 *------------------------------- END OF RIGHT TREE - STARTING SUBROUTINES ----------------
 * TODO: organize these in order of their number 
+DO_NOP
+    LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
+    MOVE.B  #1,D7       * Store key for op code for EA module
+    ** Eventually, EA Module will be called here
+    JSR     WRITE       * Jump to WRITE subroutine
+    RTS                 * Return to I/O module 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
     MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section a (which is a byte)
     JSR     WRITE
     JSR     MOVE_EA
-    RTS
-DO_MOVEA_W
-    LEA     S_MOVEA_W,A3
-    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
     RTS
 DO_MOVE_W
     LEA     S_MOVE_W,A3
@@ -262,17 +284,34 @@ DO_MOVE_W
     JSR     WRITE
     JSR     MOVE_EA
     RTS
+DO_MOVE_L
+    LEA     S_MOVE_L,A3
+    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+    JSR     WRITE
+    JSR     MOVE_EA
+    RTS
+DO_MOVE
+    LEA     S_MOVE,A3       * come back to this, wtf is this
+    MOVE.B  #2,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MOVEA_W
+    LEA     S_MOVEA_W,A3
+    MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section b (which is a word)
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
     MOVE.B  #3,D7         * for now, temporarily calling this mnemonic number 3, section c (which is a long)
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
-DO_MOVE_L
-    LEA     S_MOVE_L,A3
-    MOVE.B  #2,D7         * for now, temporarily calling this mnemonic number 2, section c (which is a long)
+DO_MOVEQ
+    LEA     S_MOVEQ,A3
+    MOVE.B  #4,D7
     JSR     WRITE
-    JSR     MOVE_EA
     RTS
 DO_BCC_CASE
     MOVE.W  #Bcc_MASK,D2
@@ -287,6 +326,7 @@ DO_BCC_CASE
     BEQ     DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
+* !! MODULE #5 -- MOVEM HERE !!
 DO_ADD_B
     LEA     S_ADD_B,A3
     MOVE.B  #6,D7
@@ -323,67 +363,6 @@ DO_ADDI
     JSR     WRITE
     ** EA Module will be called now
     RTS
-DO_DIVU_W
-    LEA     S_DIVU,A3
-    MOVE.B  #14,D7
-    JSR     WRITE
-    RTS
-DO_OR_B
-    LEA     S_OR_B,A3
-    MOVE.B  #18,D7
-    JSR     WRITE
-    RTS
-DO_OR_W
-    LEA     S_OR_W,A3
-    MOVE.B  #18,D7
-    JSR     WRITE
-    RTS
-DO_OR_L
-    LEA     S_OR_L,A3
-    MOVE.B  #18,D7
-    JSR     WRITE
-    RTS
-DO_BGT
-    LEA     S_BGT,A3
-    MOVE.B  #26,D7
-    JSR     WRITE
-    ** EA Module will be called now
-    RTS
-DO_BLE
-    LEA     S_BLE,A3
-    MOVE.B  #27,D7
-    JSR     WRITE
-    ** EA Module will be called now
-    RTS
-DO_BCC
-    LEA     S_BCC,A3
-    MOVE.B  #28,D7
-    ** EA Module will be called now
-    JSR     WRITE
-    RTS
-DO_CMP_B
-    LEA     S_CMP_B,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    ** EA Module will be called now
-    RTS
-DO_CMP_W
-    LEA     S_CMP_W,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    ** EA Module will be called now
-    RTS
-DO_CMP_L
-    LEA     S_CMP_L,A3
-    MOVE.B  #25,D7
-    JSR     WRITE
-    RTS
-DO_SUBI
-    LEA     S_SUBI,A3
-    MOVE.B  #11,D7
-    ** Eventually, EA Module will be called here
-    JSR     WRITE
-    RTS
 DO_ADDQ
     *Check for full opcode for 11 and onwards. if invalid, print the message
     LEA     S_ADDQ,A3
@@ -406,47 +385,124 @@ DO_SUB_L
     MOVE.B  #10,D7
     JSR     WRITE
     RTS
+DO_SUBI
+    LEA     S_SUBI,A3
+    MOVE.B  #11,D7
+    ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_MULS_W
+    LEA     S_MULS_W,A3
+    MOVE.B  #12,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS   
+DO_MULU_W
+    LEA     S_MULU_W,A3
+    MOVE.B  #13,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS   
+DO_DIVU_W
+    LEA     S_DIVU,A3
+    MOVE.B  #14,D7
+    JSR     WRITE
+    RTS
+DO_LEA
+    LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
+    MOVE.B  #15,D7       * Store key for op code for EA module
+
+    JSR     WRITE
+    RTS
 DO_CLR
     LEA     S_CLR,A3
     MOVE.B  #16,D7
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
-DO_LEA
-    LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #15,D7       * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to I/O module 
-DO_NOP
-    LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-    MOVE.B  #1,D7       * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to I/O module 
+DO_AND_B
+    LEA     S_AND_B,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_AND_W
+    LEA     S_AND_W,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_AND_L
+    LEA     S_AND_L,A3
+    MOVE.B  #17,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_OR_B
+    LEA     S_OR_B,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_W
+    LEA     S_OR_W,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+DO_OR_L
+    LEA     S_OR_L,A3
+    MOVE.B  #18,D7
+    JSR     WRITE
+    RTS
+* !! MODULE 19 - 24 NEEDED HERE !! (Rotation commands)
+DO_CMP_B
+    LEA     S_CMP_B,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_CMP_W
+    LEA     S_CMP_W,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_CMP_L
+    LEA     S_CMP_L,A3
+    MOVE.B  #25,D7
+    JSR     WRITE
+    RTS
+DO_BGT
+    LEA     S_BGT,A3
+    MOVE.B  #26,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BLE
+    LEA     S_BLE,A3
+    MOVE.B  #27,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BCC
+    LEA     S_BCC,A3
+    MOVE.B  #28,D7
+    ** EA Module will be called now
+    JSR     WRITE
+    RTS
+DO_JSR      **JSR 29?? 
+    LEA     S_JSR,A3
+    MOVE.B  #29,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
 DO_RTS
     LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
     MOVE.B  #30,D7      * Store key for op code for EA module
-    ** Eventually, EA Module will be called here
-    JSR     WRITE       * Jump to WRITE subroutine
-    RTS                 * Return to the I/O module bra op_decode  
-DO_MOVE
-    LEA     S_MOVE,A3
-    MOVE.B  #2,D7
-    ** Eventually, EA Module will be called here
+
     JSR     WRITE
     RTS
-DO_MOVEQ
-    LEA     S_MOVEQ,A3
-    MOVE.B  #4,D7
-    JSR     WRITE
-    RTS
-DO_JSR
-    LEA     S_JSR,A3
-    MOVE.B  #27,D7
-    ** Eventually, NOCK will be called here
-    JSR     WRITE
-    RTS
+
+***** MESSAGES *******
 PRINT_INVALID_MSG
     LEA     INVALID,A3
     MOVE.B  #0,D7
@@ -512,8 +568,6 @@ S_SUB       DC.B    'SUB            ',0
 S_CMP_B     DC.B    'CMP.B          ',0
 S_CMP_W     DC.B    'CMP.W          ',0
 S_CMP_L     DC.B    'CMP.L          ',0
-S_MULU      DC.B    'MULU           ',0
-S_MULS      DC.B    'MULS           ',0
 S_AND       DC.B    'AND            ',0
 S_ADD       DC.B    'ADD            ',0
 S_ADDA      DC.B    'ADDA           ',0
@@ -534,6 +588,11 @@ S_ADD_L     DC.B    'ADD.L          ',0
 S_SUB_B     DC.B    'SUB.B          ',0
 S_SUB_W     DC.B    'SUB.W          ',0
 S_SUB_L     DC.B    'SUB.L          ',0
+S_AND_B     DC.B    'AND.B          ',0
+S_AND_W     DC.B    'AND.W          ',0
+S_AND_L     DC.B    'AND.L          ',0
+S_MULS_W    DC.B    'MULS.W         ',0
+S_MULU_W    DC.B    'MULU.W         ',0
 
 *** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
@@ -553,6 +612,7 @@ CMP_MASK        EQU     %1111000011000000
 DIVU_MASK       EQU     %0000000111000000
 ADD_MASK        EQU     %0000000111000000
 SUB_MASK        EQU     %0000000111000000
+AND_MM_MASK     EQU     %0000000111000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 

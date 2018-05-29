@@ -57,7 +57,14 @@ HAI
     SUB.B   D2,D3
     SUB.W   D3,D1
     SUB.L   D3,D2
-    
+
+    AND.B   D2,D1
+    AND.W   D1,D3
+    AND.L   D1,D2
+
+    MULS.W  D2,D4
+    MULU.W  D1,D3
+
     NOP
     NOP
     NOP
