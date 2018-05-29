@@ -53,6 +53,11 @@ HAI
     ADD.L   D3,D2
     ADDA.W  A2,A4
     ADDA.L  A4,A3
+
+    SUB.B   D2,D3
+    SUB.W   D3,D1
+    SUB.L   D3,D2
+    
     NOP
     NOP
     NOP

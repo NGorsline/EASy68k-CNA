@@ -119,7 +119,7 @@ OIOO_BRA
     MOVE.W  #LEA_MASK,D2
     AND     D5,D2
     CMP.W   #$01C0,D2              *EQUAL TO LEA?
-    BEQ.W   DO_LEA
+    BEQ     DO_LEA
     BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 
 *------------------------------- END OF LEFT TREE - STARTING RIGHT TREE ----------------
@@ -159,26 +159,44 @@ IOOO_BRA                        * Logic for OR, DIVU
     MOVE.W  #DIVU_MASK,D2
     AND.W   D5,D2
     CMP.W   #$00C0,D2           * DIVU can only be 011 in positions 8-6
-    BEQ.W   DO_DIVU_W
+    BEQ     DO_DIVU_W
     *if not DIVU, try to check if it's any form of OR
     
     CMP.W   #$0000,D2           * Is it a byte operation for <ea> V Dn --> Dn?
-    BEQ.W   DO_OR_B
+    BEQ     DO_OR_B
     CMP.W   #$0100,D2           * Is it a byte operation for Dn V <ea> --> <ea>
-    BEQ.W   DO_OR_B
+    BEQ     DO_OR_B
     CMP.W   #$0040,D2           * Is it a word operation for <ea> V Dn --> Dn?
-    BEQ.W   DO_OR_W
+    BEQ     DO_OR_W
     CMP.W   #$0140,D2           * Is it a word operation for Dn V <ea> --> <ea>
-    BEQ.W   DO_OR_W
+    BEQ     DO_OR_W
     CMP.W   #$0080,D2           * Is it a long word operation for <ea> V Dn --> Dn?
-    BEQ.W   DO_OR_L
+    BEQ     DO_OR_L
     CMP.W   #$0180,D2           * Is it a long word operation for Dn V <ea> --> <ea>
-    BEQ.W   DO_OR_L
+    BEQ     DO_OR_L
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 
 IOOI_BRA                        * Logic for SUB
-    BRA     PRINT_COME_BACK_MSG
+    MOVE     #SUB_MASK,D2
+    AND.W    D5,D2
+    CMP.W    #$0000,D2          * is it SUB.B for Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_B
+    CMP.W    #$0100,D2          * is it SUB.B for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_B
+
+    CMP.W   #$0040,D2           * is it SUB.W Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_W
+    CMP.W   #$0140,D2           * is it SUB.W for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_W
+
+    CMP.W   #$0080,D2           * is it SUB.L Dn-<ea> --> Dn? 
+    BEQ      DO_SUB_L
+    CMP.W   #$0180,D2           * is it SUB.L for <ea> - Dn --> <ea> ? 
+    BEQ      DO_SUB_L
+
+    BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
+
 IOII_BRA                        * Logic for CMP
     MOVE    #CMP_MASK,D2        * Temporarily load mask into D2
     AND.W   D5,D2
@@ -260,13 +278,13 @@ DO_BCC_CASE
     MOVE.W  #Bcc_MASK,D2
     AND     D5,D2
     CMP.W   #$0E00,D2                * Is it BGT?
-    BEQ.W   DO_BGT
+    BEQ     DO_BGT
     
     CMP.W   #$0F00,D2                * Is it BLE?
-    BEQ.W   DO_BLE
+    BEQ     DO_BLE
 
     CMP.W   #$0400,D2                * Is it BCC?
-    BEQ.W   DO_BCC
+    BEQ     DO_BCC
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
 DO_ADD_B
@@ -371,6 +389,21 @@ DO_ADDQ
     LEA     S_ADDQ,A3
     MOVE.B  #9,D7
     ** Eventually, EA Module will be called here
+    JSR     WRITE
+    RTS
+DO_SUB_B
+    LEA     S_SUB_B,A3
+    MOVE.B  #10,D7
+    JSR     WRITE
+    RTS
+DO_SUB_W
+    LEA     S_SUB_W,A3
+    MOVE.B  #10,D7
+    JSR     WRITE
+    RTS
+DO_SUB_L
+    LEA     S_SUB_L,A3
+    MOVE.B  #10,D7
     JSR     WRITE
     RTS
 DO_CLR
@@ -498,6 +531,9 @@ S_ADDA_L    DC.B    'ADDA.L         ',0
 S_ADD_B     DC.B    'ADD.B          ',0
 S_ADD_W     DC.B    'ADD.W          ',0
 S_ADD_L     DC.B    'ADD.L          ',0
+S_SUB_B     DC.B    'SUB.B          ',0
+S_SUB_W     DC.B    'SUB.W          ',0
+S_SUB_L     DC.B    'SUB.L          ',0
 
 *** Strings for messages 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
@@ -507,9 +543,6 @@ BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 *** Mask constants 
 JSR_MASK        EQU     %0000111111000000
 ADDSUBI_MASK    EQU     %0000111100000000       ** come back and fix this to be the same but diferent comparisons 
-BYTE_MASK       EQU     %0000000000000000       * Not sure if this is needed
-WORD_MASK       EQU     %0000000001000000       * not sure if this is needed
-LONG_MASK       EQU     %0000000010000000       * not sure if this is needed
 CLR_MASK        EQU     %0000111100000000
 LEA_MASK        EQU     %0000000111000000
 Bcc_MASK        EQU     %0000111100000000
@@ -519,6 +552,7 @@ MOVE_MASK       EQU     %0011000000000000
 CMP_MASK        EQU     %1111000011000000
 DIVU_MASK       EQU     %0000000111000000
 ADD_MASK        EQU     %0000000111000000
+SUB_MASK        EQU     %0000000111000000
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
 
