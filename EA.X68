@@ -82,9 +82,17 @@ DO_MODE
     ** HERE: check for non-required EA modes (101, 110, 111 w/ 010 in Xn, 111 w/ 011 in Xn)
     ** if found, branch to "unsupported EA mode" branch
     
-    * assume mode is 111, check Xn for immediate data or absolute address
+    * assume mode is 111, check Xn for immediate data
     CMP.B   #04,D6
     BEQ     IMM_DATA
+    
+    * if not, it's absolute address: check size register for size key to branch
+    CMP.B   #10,D7
+    BEQ     ABSOLUTE
+    
+    * here, must be absolute word. discard sign-extended hexabits
+    MOVE.W  (A6)+,D5
+    BRA     ABSOLUTE
     
     RTS
 
@@ -134,25 +142,26 @@ IMM_DATA
     JSR     GW_HARD_DATA
     RTS
 
-ABS_LONG
-    * GET LONG FROM (A6)+
-    * WRITE $
-    * WRITE DATA GOT FROM A6
+ABSOLUTE
+    MOVE.B  #'$',(A4)+
+    JSR     GW_HARD_DATA
+    RTS
 
-ABS_WORD
-    * GET WORD FROM (A6)+
-    * WRITE $
-    * WRITE DATA GOT FROM A6
+*ABS_WORD
+*    MOVE.B  #'$',(A4)+
+*    MOVE.W  (A6)+,D5
+    
+    
     
     
 GW_HARD_DATA
-    BRA     LONG
-    CMPI.B  #00,D1
+    * Branch based on D7 size code(#0 = byte, #1 = word, #10 = long, decimal)
+    CMPI.B  #00,D7
     BEQ     BYTE
-    CMPI.B  #01,D1
+    CMPI.B  #01,D7
     BEQ     WORD
-    CMPI.B  #02,D1
-    BEQ     WORD
+    CMPI.B  #10,D7
+    BEQ     LONG
     
 BYTE
     MOVE.W  (A6)+,D5
@@ -225,6 +234,7 @@ THREE_LSB_MASK  EQU     %0000000000000111
 *??
 
     END    START        ; last line of source
+
 
 
 
