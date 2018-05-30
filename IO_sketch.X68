@@ -47,13 +47,16 @@ START:                  ; first instruction of program
     MOVEA.L D2,A5           * compare A6 to A5 to know when to stop
     CMPA.L  A5,A6           * check beginning address >= end address
     BGE     ERROR_END_LTE_BEG
-
+    JSR     INIT_LN
     BRA     MAIN_LOOP       * if all error checks pass, start main loop
     
 
 ;; ~~~~~~~~INITIALIZE LINE COUNTER~~~~~~~~
-    
+INIT_LN
+    MOVE.B  #19,LINE_COUNTER
+    RTS
 ;; ~~~~~~~~END OF INITIALIZE LINE COUNTER~~~~~~~~
+
 
 ;; ~~~~~~~~PRINT TEAM LOGO~~~~~~~~
 PRINT_TOUCAN
@@ -111,9 +114,6 @@ PRINT_TOUCAN
     LEA     NEW_LINE,A1
     MOVE.B  #14,D0
     TRAP    #15
-    
-  
- 
     
     RTS
 
@@ -227,9 +227,28 @@ ADD_SP_LOOP             * Adding space loop
 
 
 ;; ~~~~~~~~OPCODE PRINTED COUNTER~~~~~~~~
-CHECK_LINES_PRINTED 
-
+CHECK_LINES_PRINTED
+    SUBI.B  #1,LINE_COUNTER
+    MOVE.B  LINE_COUNTER,D0
+    CMP.B   #00,D0
+    BEQ     WFI
+    RTS 
+    
 ;; ~~~~~~~~END OF OPCODE PRINTED COUNTER~~~~~~~~
+
+;; ~~~~~~~~WAIT FOR INOUT~~~~~~~~
+WFI
+    LEA     ENTER_TO_CONT,A1
+    MOVE.B  #14,D0
+    TRAP    #15             * ask user to hit enter to next page
+    LEA     LINE_COUNTER,A1
+    MOVE.B  #2,D0
+    TRAP    #15
+*    MOVE.B  #11,d0          * clear screen
+*    TRAP    #15
+    MOVE.B  #$19,LINE_COUNTER
+    RTS
+;; ~~~~~~~~END OF WAIT FOR INPUT~~~~~~~~
 
 
 
@@ -250,7 +269,7 @@ MAIN_LOOP
     MOVE.B  #$00,(A4)+  * Write null term at end of freshly decoded line
     MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
     TRAP    #15
-    
+    JSR     CHECK_LINES_PRINTED
     BRA     MAIN_LOOP
     
     * Once the loop exits, print a farewell message to the console.
@@ -276,7 +295,7 @@ ASC_CHAR_MAX    EQU     $46     * ASCII key for F
 ADR_PR_MASK     EQU     %00000000000000000000000000001111
 
 ; Variables
-MOVEM_LOCAL     EQU     $0000  * A place to store the data for movem
+LINE_COUNTER    DS.B    * A place to store the data for movem
 
 ; Message strings
 NEW_LINE        DC.B    '',0,CR,LF
@@ -286,6 +305,8 @@ END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to sta
 ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
 ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
 PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+ENTER_TO_CONT   DC.B    'Press Enter to continue...',0
+
 LF              EQU      $0A
 CR              EQU      $0D
 
@@ -302,7 +323,7 @@ TC09           DC.B '         `-._        \           / /_  ( _ )| | __',0
 TC10           DC.B '             ".  ,-.  \         | `_ \ / _ \| |/ /',0
 TC11           DC.B ' .__          _`.\..`\ \        | (_) | (_) |   < ',0
 TC12           DC.B ' ,  ""- . _,-".,-"  ``: \        \___/ \___/|_|\_\',0
-TC13           DC.B ' "-...._ (( (("-.._    \ \',0
+TC13           DC.B ' "-...._ (( (("-.._    \ \          disassembler',0
 TC14           DC.B '        `--..      `"-. \ \ ',0
 TC15           DC.B '             `..     "   \ \',0
 TC16           DC.B '                `\ \/     `"',0
@@ -375,6 +396,10 @@ END_NOW
 *     CMP.L   A5,A6
 *     BLE     PRINT_IT_LOOP
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
+
+
+
+
 
 
 
