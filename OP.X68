@@ -751,25 +751,24 @@ DO_CMP_L
     RTS
 DO_BGT
     LEA     S_BGT,A3
-    MOVE.B  #26,D7
+    MOVE.B  #10,D7
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_BLE
     LEA     S_BLE,A3
-    MOVE.B  #27,D7
+    MOVE.B  #10,D7
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_BCC
     LEA     S_BCC,A3
-    MOVE.B  #28,D7
+    MOVE.B  #10,D7
     ** EA Module will be called now
     JSR     WRITE
     RTS
-DO_JSR      **JSR 29?? 
+DO_JSR 
     LEA     S_JSR,A3
-    MOVE.B  #29,D7
     JSR     WRITE
     ** EA Module will be called now
     RTS
