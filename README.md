@@ -34,3 +34,9 @@ D5 - Word data @ A6 (to decode)
 D6 - Register number in the EA module
 
 D7 - Opcode number for EA module (1 - 30, top-to-bottom according to our opcode chart)
+
+#Size Codes
+Passed from OP module to indicate the size code extension.
+* 00 -> byte
+* 01 -> word
+* 10 -> long
