@@ -117,7 +117,11 @@ PRINT_TOUCAN
     
     RTS
 
-    
+PRINT_GOODBYE_MSG
+    LEA     DONE_MSG,A1
+    MOVE.B  #13,D0
+    TRAP    #15   
+    RTS
     
 ;; ~~~~~~~~END OF PRINT TEAM LOGO~~~~~~~~
 
@@ -261,21 +265,21 @@ WFI
 ; stop printing. After the line is printed, A4 is copied into A1 to start 
 ; printing from the next spot in memory where the buffer (A4) writes to.
 MAIN_LOOP
-    MOVEA.L A4,A1       * Set A1 to point at beginning of next decoded line
+    MOVEA.L A4,A1       * Set A1 to point at beginning of next decoded line    
     JSR     PRINT_MEM_ADDRESS
-    CMPA.L  A5,A6
-    BGE     END_NOW     * End program if iterator is at or past A5 (end addr)
     JSR     OP_DECODE   * Call the OP module, which will read next word
     MOVE.B  #$00,(A4)+  * Write null term at end of freshly decoded line
     MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
     TRAP    #15
+    CMPA.L  A5,A6       * Need to check if we're at the end of the program first
+    BGE     END_NOW     * End program if iterator is at or past A5 (end addr)
     JSR     CHECK_LINES_PRINTED
     BRA     MAIN_LOOP
     
     * Once the loop exits, print a farewell message to the console.
-    LEA     DONE_MSG,A1
-    MOVE.B  #13,D0
-    TRAP    #15
+    * LEA     DONE_MSG,A1
+    * MOVE.B  #13,D0
+    * TRAP    #15
 
     SIMHALT             ; halt simulator
 
@@ -334,10 +338,9 @@ DISM_CODE       EQU     $8000     * Where to write disassembled code
     NOP                         * Ensures included files align on word boundary
 
 END_NOW
-    LEA     DONE_MSG,A1
-    MOVE.B  #1,D0
-    TRAP    #15
-   
+    BRA     PRINT_GOODBYE_MSG
+    MOVE.B  #09,D0
+    TRAP    #15    
     
     INCLUDE 'OP.X68'
     
