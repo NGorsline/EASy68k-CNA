@@ -380,34 +380,29 @@ DO_ASd
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_NOP
     LEA     S_NOP,A3    * Load the NOP string into A3 for WRITE subroutine
-    * MOVE.B  #1,D7       * Store key for op code for EA module
     ** Eventually, EA Module will be called here
     JSR     WRITE       * Jump to WRITE subroutine
     RTS                 * Return to I/O module 
 DO_MOVE_B
     LEA     S_MOVE_B,A3
-    * MOVE.B  #2,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_W
-    LEA     S_MOVE_W,A3
-    *MOVE.B  #2,D7        
+    LEA     S_MOVE_W,A3   
     MOVE.B  #01,D7          * passing size code WORD to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVE_L
     LEA     S_MOVE_L,A3
-    *MOVE.B  #2,D7
     MOVE.B  #10,D7          * passing size code LONG to EA    
     JSR     WRITE
     JSR     MOVE_EA
     RTS
 DO_MOVEA_W
     LEA     S_MOVEA_W,A3
-    *MOVE.B  #3,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     ** Eventually, EA Module will be called here
     JSR     WRITE
@@ -415,7 +410,6 @@ DO_MOVEA_W
     RTS
 DO_MOVEA_L
     LEA     S_MOVEA_L,A3
-    MOVE.B  #3,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     ** Eventually, EA Module will be called here
     JSR     WRITE
@@ -423,7 +417,6 @@ DO_MOVEA_L
     RTS
 DO_MOVEQ
     LEA     S_MOVEQ,A3
-    *MOVE.B  #4,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
@@ -442,47 +435,40 @@ DO_BCC_CASE
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
 DO_MOVEM_W
     LEA     S_MOVEM_W,A3
-    *MOVE.B  #5,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_MOVEM_L
     LEA     S_MOVEM_L,A3
-    *MOVE.B  #5,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ADD_B
     LEA     S_ADD_B,A3
-    *MOVE.B  #6,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADD_W
     LEA     S_ADD_W,A3
-    *MOVE.B  #6,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADD_L
     LEA     S_ADD_L,A3
-    *MOVE.B  #6,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDA_W
     LEA     S_ADDA_W,A3
-    *MOVE.B  #7,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDA_L
     LEA     S_ADDA_L,A3
-    *MOVE.B  #7,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
@@ -502,61 +488,52 @@ DO_ADDI
     BRA     PRINT_INVALID_MSG
 DO_ADDI_B
     LEA     S_ADDI_B,A3
-    *MOVE.B  #8,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDI_W
     LEA     S_ADDI_W,A3
-    *MOVE.B  #8,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDI_L
     LEA     S_ADDI_L,A3
-    *MOVE.B  #8,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_ADDQ_B
     LEA     S_ADDQ_B,A3
-    *MOVE.B  #9,D7
      MOVE.B  #00,D7          * passing size code BYTE to EA
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_ADDQ_W
     LEA     S_ADDQ_W,A3
-    *MOVE.B  #9,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_ADDQ_L
     LEA     S_ADDQ_L,A3
-    *MOVE.B  #9,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     ** Eventually, EA Module will be called here
     JSR     WRITE
     RTS
 DO_SUB_B
     LEA     S_SUB_B,A3
-    *MOVE.B  #10,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     RTS
 DO_SUB_W
     LEA     S_SUB_W,A3
-    *MOVE.B  #10,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_SUB_L
     LEA     S_SUB_L,A3
-    *MOVE.B  #10,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
@@ -575,237 +552,200 @@ DO_SUBI
     BRA     PRINT_INVALID_MSG
 DO_SUBI_B
     LEA     S_SUBI_B,A3
-    *MOVE.B  #11,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_SUBI_W
     LEA     S_SUBI_W,A3
-    *MOVE.B  #11,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_SUBI_L
     LEA     S_SUBI_L,A3
-    *MOVE.B  #11,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_MULS_W
     LEA     S_MULS_W,A3
-    *MOVE.B  #12,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS   
 DO_MULU_W
     LEA     S_MULU_W,A3
-    *MOVE.B  #13,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS   
 DO_DIVU_W
     LEA     S_DIVU,A3
-    *MOVE.B  #14,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_LEA
     LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
-    *MOVE.B  #15,D7       * Store key for op code for EA module
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_CLR_B
     LEA     S_CLR_B,A3
-    *MOVE.B  #16,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     ** Eventually, EA Module will be called here
     RTS
 DO_CLR_W
     LEA     S_CLR_W,A3
-    *MOVE.B  #16,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** Eventually, EA Module will be called here
     RTS
 DO_CLR_L
     LEA     S_CLR_L,A3
-    *MOVE.B  #16,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** Eventually, EA Module will be called here
     RTS
 DO_AND_B
     LEA     S_AND_B,A3
-    *MOVE.B  #17,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_AND_W
     LEA     S_AND_W,A3
-    *MOVE.B  #17,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_AND_L
     LEA     S_AND_L,A3
-    *MOVE.B  #17,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_OR_B
     LEA     S_OR_B,A3
-    *MOVE.B  #18,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_OR_W
     LEA     S_OR_W,A3
-    *MOVE.B  #18,D7
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
     RTS
 DO_OR_L
     LEA     S_OR_L,A3
-    *MOVE.B  #18,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 
 DO_LSL_B
     LEA     S_LSL_B,A3
-    *MOVE.B  #19,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_LSL_W
     LEA     S_LSL_W,A3
-    *MOVE.B  #19,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_LSL_L
     LEA     S_LSL_L,A3
-    *MOVE.B  #19,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_LSR_B
     LEA     S_LSR_B,A3
-    *MOVE.B  #20,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_LSR_W
     LEA     S_LSR_W,A3
-    *MOVE.B  #20,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_LSR_L
     LEA     S_LSR_L,A3
-    *MOVE.B  #20,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ASR_B
     LEA     S_ASR_B,A3
-    *MOVE.B  #21,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ASR_W
     LEA     S_ASR_W,A3
-    *MOVE.B  #21,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ASR_L
     LEA     S_ASR_L,A3
-    *MOVE.B  #21,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ASL_B
     LEA     S_ASL_B,A3
-    *MOVE.B  #22,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ASL_W
     LEA     S_ASL_W,A3
-    *MOVE.B  #22,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ASL_L
     LEA     S_ASL_L,A3
-    *MOVE.B  #22,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ROL_B
     LEA     S_ROL_B,A3
-    *MOVE.B  #23,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ROL_W
     LEA     S_ROL_W,A3
-    *MOVE.B  #23,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ROL_L
     LEA     S_ROL_L,A3
-    *MOVE.B  #23,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_ROR_B
     LEA     S_ROR_B,A3
-    *MOVE.B  #24,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
     RTS
 DO_ROR_W
     LEA     S_ROR_W,A3
-    *MOVE.B  #24,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     RTS
 DO_ROR_L
     LEA     S_ROR_L,A3
-    *MOVE.B  #24,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
 DO_CMP_B
     LEA     S_CMP_B,A3
-    *MOVE.B  #25,D7
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_CMP_W
     LEA     S_CMP_W,A3
-    *MOVE.B  #25,D7
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
     ** EA Module will be called now
     RTS
 DO_CMP_L
     LEA     S_CMP_L,A3
-    *MOVE.B  #25,D7
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
     RTS
@@ -835,8 +775,6 @@ DO_JSR      **JSR 29??
     RTS
 DO_RTS
     LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine
-    MOVE.B  #30,D7      * Store key for op code for EA module
-
     JSR     WRITE
     RTS
 PRINT_INVALID_MSG
