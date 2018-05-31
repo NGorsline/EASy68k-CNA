@@ -447,19 +447,19 @@ DO_ADD_B
     LEA     S_ADD_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADD_SUB_EA
     RTS
 DO_ADD_W
     LEA     S_ADD_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADD_SUB_EA
     RTS
 DO_ADD_L
     LEA     S_ADD_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADD_SUB_EA
     RTS
 DO_ADDA_W
     LEA     S_ADDA_W,A3
@@ -526,16 +526,19 @@ DO_SUB_B
     LEA     S_SUB_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
+    JSR     ADD_SUB_EA
     RTS
 DO_SUB_W
     LEA     S_SUB_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
+    JSR     ADD_SUB_EA
     RTS
 DO_SUB_L
     LEA     S_SUB_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     ADD_SUB_EA
     RTS
 DO_SUBI
     MOVE.W  #ADDSUBI_S_MASK,D2
@@ -572,18 +575,19 @@ DO_MULS_W
     LEA     S_MULS_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     DR_ARITH_EA
     RTS   
 DO_MULU_W
     LEA     S_MULU_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     DR_ARITH_EA
     RTS   
 DO_DIVU_W
     LEA     S_DIVU,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
+    JSR     DR_ARITH_EA
     RTS
 DO_LEA
     LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
@@ -920,6 +924,8 @@ AND_MM_MASK     EQU     %0000000111000000
 R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
+
 
 
 

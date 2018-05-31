@@ -17,6 +17,7 @@
 *** D6 -> Holds register # (used by WRITE)
 
 
+; EA parsing for MOVE and MOVEA
 MOVE_EA
 
 ;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
@@ -36,18 +37,21 @@ MOVE_EA
     * 11.) Return to I/O module
     
 
+    *** DECODE SOURCE EA
     MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
     ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
     MOVE.L  D5,D0               * D0 will hold the mode
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
-    MOVEM   D5,-(SP)
+    MOVEM   D5,-(SP)            * Save the contents of D5 so DO_MODE can use it
     JSR     DO_MODE             * Get source mode decoded and written to buffer
-    MOVEM   (SP)+,D5
+    MOVEM   (SP)+,D5            * Restore the value of D5
     
     ** CURRENT BUFFER STATE: MOVE.x         Xn
     
     MOVE.B  #',',(A4)+          * Write the comma between EA modes
+    
+    *** DECODE DESTINATION EA
     ROR.W   #3,D5               * dest mode is now 3 LSB of D5
     MOVE.L  D5,D0               * Copy new rotated word into D0 for masking
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds dest mode code
@@ -59,6 +63,73 @@ MOVE_EA
     ** FINAL BUFFER STATE: MOVE.x         Xn,Xn
     
     RTS
+    
+    
+; Checks bit 8 to see if bits 11-6 are source or destination for ADD and SUB
+ADD_SUB_EA
+    BTST.L  #08,D5
+    BEQ     DR_ARITH_EA         * if bit 8 is clear, DR_ARITH_EA logic works
+    
+    *** If bit 8 is set, we need to handle bits 11-6 as the source
+    ROR.W   #05,D5              * Shift 5 then 4 bits (can't shift >8 in one)
+    ROR.W   #04,D5              * Bits 11-9 are now bits 2-0
+    MOVE.W  D5,D6               * Move rotated instruction word into D6 to mask
+    AND.W   #THREE_LSB_MASK,D6  * Mask source register # into D6
+    MOVE.B  #00,D0              * Data register direct mode (000) into D0
+    ROL.W   #05,D5              * Rotate D5 word back to original state
+    ROL.W   #04,D5
+    MOVEM   D5,-(SP)            * Save D5 so DO_MODE can use it
+    JSR     DO_MODE
+    MOVEM   (SP)+,D5            * Restore the value of D5
+    
+    ** CURRENT BUFFER STATE: OPER.x     Dn
+    
+    MOVE.B  #',',(A4)+          * Write comma between EA modes
+    
+    *** NOW DECODE BITS 5-0 AS DESTINATION
+    MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds the source register number (Xn)
+    ROR.W   #03,D5              * Rotate by 3 bits. Mode should now be 3 LSB
+    MOVE.L  D5,D0               * D0 will hold the mode
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+    JSR     DO_MODE             * Get source mode decoded and written to buffer
+    
+    RTS
+    
+    
+    
+    
+    
+    
+; EA parsing for ADD, SUB, MULS, MULU, and DIVU
+DR_ARITH_EA
+    * First half of logic is similar to MOVE_EA
+    
+    *** DECODE SOURCE EA
+    MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds the source register number (Xn)
+    ROR.W   #03,D5              * Rotate by 3 bits. Mode should now be 3 LSB
+    MOVE.L  D5,D0               * D0 will hold the mode
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+    MOVEM   D5,-(SP)            * Save the contents of D5 so DO_MODE can use it
+    JSR     DO_MODE             * Get source mode decoded and written to buffer
+    MOVEM   (SP)+,D5            * Restore the value of D5
+    
+    ** CURRENT BUFFER STATE: OPER.x     Xn
+    
+    MOVE.B  #',',(A4)+          * Write the comma between EA modes
+    
+    *** DECODE DESTINATION EA
+    ROR.W   #06,D5              * Don't need bits 8-6, so move past them
+    MOVE.W  D5,D6               * Put newly rotated word into D6 for masking
+    AND.W   #THREE_LSB_MASK,D6  * Bits 11-9 hold the destination register (Dn)
+    MOVE.B  #00,D0              * The mode here will always be DR Direct (000)
+    JSR     DO_MODE             * Get dest mode decoded and written to buffer
+    
+    ** FINAL BUFFER STATE:  OPER.x      Xn,Dn
+    
+    RTS
+    
     
     
     
@@ -87,11 +158,11 @@ DO_MODE
     BEQ     IMM_DATA
     
     * if not, it's absolute address: check size register for size key to branch
-    CMP.B   #10,D7
-    BEQ     ABSOLUTE
+    *CMP.B   #10,D7
+    *BEQ     ABSOLUTE
     
-    * here, must be absolute word. discard sign-extended hexabits
-    MOVE.W  (A6)+,D5
+    * here, must be absolute word. check if word or long-word addressing range
+    
     BRA     ABSOLUTE
     
     RTS
@@ -144,12 +215,11 @@ IMM_DATA
 
 ABSOLUTE
     MOVE.B  #'$',(A4)+
-    JSR     GW_HARD_DATA
-    RTS
+    * Test for (xxx).W [000 in register field] or (xxx).L [001]
+    CMP.B   #00,D6
+    BEQ     WORD
+    BRA     LONG
 
-*ABS_WORD
-*    MOVE.B  #'$',(A4)+
-*    MOVE.W  (A6)+,D5
     
     
     
