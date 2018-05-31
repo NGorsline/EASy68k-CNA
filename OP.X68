@@ -650,31 +650,37 @@ DO_LSL_B
     LEA     S_LSL_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_LSL_W
     LEA     S_LSL_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_LSL_L
     LEA     S_LSL_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_LSR_B
     LEA     S_LSR_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_LSR_W
     LEA     S_LSR_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_LSR_L
     LEA     S_LSR_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ASR_B
     LEA     S_ASR_B,A3
