@@ -13,12 +13,13 @@ START:                  ; first instruction of program
 
     ; A4 will point at where we write disassembled code (use to write ASCII)
     MOVEA.L #DISM_CODE,A4
-    ; Jump to logo print lol
+    ; Jump to logo print
     JSR     PRINT_TOUCAN 
     ; Print the input prompt message and get input as a string from user
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
     TRAP    #15
+    MOVEA.L  #TEMP_INPUT,A1
     MOVE.B  #2,D0           * get starting address from the user as a string
     TRAP    #15         
     
@@ -35,6 +36,7 @@ START:                  ; first instruction of program
     MOVE.B  #14,D0          * prompt user to enter end address
     TRAP    #15
     
+    MOVEA.L  #TEMP_INPUT,A1
     MOVE.B  #2,D0           * get end address from user as a string
     TRAP    #15
     
@@ -248,13 +250,68 @@ WFI
     LEA     LINE_COUNTER,A1
     MOVE.B  #2,D0
     TRAP    #15
-*    MOVE.B  #11,d0          * clear screen
-*    TRAP    #15
+
     MOVE.B  #$19,LINE_COUNTER
     RTS
 ;; ~~~~~~~~END OF WAIT FOR INPUT~~~~~~~~
 
 
+;; ~~~~~~~~CLEAR REGISTERS~~~~~~~~
+CLR_REGISTERS
+    CLR.L   D0
+    CLR.L   D1
+    CLR.L   D2
+    CLR.L   D3
+    CLR.L   D4
+    CLR.L   D5
+    CLR.L   D6
+    CLR.L   D7
+    MOVEA.L #$00,A0
+    MOVEA.L #$00,A1
+    MOVEA.L #$00,A2
+    MOVEA.L #$00,A3
+    MOVEA.L #$00,A4
+    MOVEA.L #$00,A5
+    MOVEA.L #$00,A6
+    
+    BRA     START
+    
+;; ~~~~~~~~END OF CLEAR REGISTERS~~~~~~~~
+
+
+;; ~~~~~~~~RUN AGAIN~~~~~~~~
+RUN_PROGRAM_AGAIN
+
+    LEA     NEW_LINE,A1     * New line for clarity
+    MOVE.B  #13,D0
+    TRAP    #15
+    
+    ; Print the message asking if user want to run again
+    LEA     RUN_AGAIN_STR,A1
+    MOVE.B  #14,D0
+    TRAP    #15
+    MOVEA.L  #TEMP_INPUT,A1
+    MOVE.B  #2,D0           * get response from user as a string
+    TRAP    #15
+    
+    CMP.B   #$59,(A1)       * Check if 'Y'
+    BEQ     CLR_REGISTERS
+    CMP.B   #$79,(A1)       * Check if 'y'
+    BEQ     CLR_REGISTERS
+    CMP.B   #$4E,(A1)       * CHeck if 'N'
+    BEQ     END_NOW
+    CMP.B   #$6E,(A1)       * Check if 'n'
+    BEQ     END_NOW
+    
+    LEA     INV_CONT_MSG,A1 * Invalid input, print message then loop again
+    MOVE.B  #13,D0
+    TRAP    #15
+    
+    BRA     RUN_PROGRAM_AGAIN
+
+    
+    
+;; ~~~~~~~~END OF RUN AGAIN~~~~~~~~
 
   
 ; Main loop of the program; Checks if the iterator (A6) is past the ending 
@@ -272,14 +329,18 @@ MAIN_LOOP
     MOVE.B  #13,D0      * Trap task 13 prints bytes at A1 until a null term
     TRAP    #15
     CMPA.L  A5,A6       * Need to check if we're at the end of the program first
-    BGE     END_NOW     * End program if iterator is at or past A5 (end addr)
+    BGE     RUN_PROGRAM_AGAIN     * End program loop if iterator is at or past A5 (end addr)
     JSR     CHECK_LINES_PRINTED
     BRA     MAIN_LOOP
     
-    * Once the loop exits, print a farewell message to the console.
-    * LEA     DONE_MSG,A1
-    * MOVE.B  #13,D0
-    * TRAP    #15
+    * Once the loop exits, print a complete message to the console.
+*    LEA     DONE_MSG,A1
+*    MOVE.B  #13,D0
+*    TRAP    #15
+    
+    * Branch to checking if the user want to run the program again
+    
+    
 
     SIMHALT             ; halt simulator
 
@@ -300,6 +361,7 @@ ADR_PR_MASK     EQU     %00000000000000000000000000001111
 
 ; Variables
 LINE_COUNTER    DS.B    * A place to store the data for movem
+TEMP_INPUT      DS.B    * Reset where A1 is pointing when getting input
 
 ; Message strings
 NEW_LINE        DC.B    '',0,CR,LF
@@ -309,6 +371,8 @@ END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to sta
 ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
 ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
 PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
+RUN_AGAIN_STR   DC.B    'Would you like to disassemble another memory image? (y/n): ',0
+INV_CONT_MSG    DC.B    'Please enter (y/n) only...',0
 ENTER_TO_CONT   DC.B    'Press Enter to continue...',0
 
 LF              EQU      $0A
@@ -409,7 +473,8 @@ END_NOW
 
 
 
+
 *~Font name~Courier New~
-*~Font size~12~
+*~Font size~14~
 *~Tab type~1~
 *~Tab size~4~
