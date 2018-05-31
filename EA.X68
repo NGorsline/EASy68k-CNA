@@ -64,6 +64,26 @@ MOVE_EA
     
     RTS
     
+ADDI_SUBI_EA
+    *** Source EA will always be immediate data. Save D5 and let SR do the work
+    MOVEM   D5,-(SP)
+    JSR     IMM_DATA
+    MOVEM   (SP)+,D5
+    
+    ** CURRENT BUFFER STATE: ADDI.x     #$DATA
+    
+    MOVE.B  #',',(A4)+
+    
+    *** DECODE DESTINATION
+    MOVE.L  D5,D6               * Move the current word into D6 for masking
+    AND.W   #THREE_LSB_MASK,D6  * Mask the 3 LSB to get the register
+    ROR.W   #03,D5              * Rotate three bits right so mode is 3 LSB
+    MOVE.L  D5,D0               * Place rotated word in D6 for masking
+    AND.W   #THREE_LSB_MASK,D0  * Mask to get the mode into D0
+    JSR     DO_MODE
+    
+    RTS
+    
     
 ; Checks bit 8 to see if bits 11-6 are source or destination for ADD and SUB
 ADD_SUB_EA

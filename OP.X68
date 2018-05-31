@@ -490,19 +490,19 @@ DO_ADDI_B
     LEA     S_ADDI_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_ADDI_W
     LEA     S_ADDI_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_ADDI_L
     LEA     S_ADDI_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_ADDQ_B
     LEA     S_ADDQ_B,A3
@@ -557,19 +557,19 @@ DO_SUBI_B
     LEA     S_SUBI_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_SUBI_W
     LEA     S_SUBI_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_SUBI_L
     LEA     S_SUBI_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDI_SUBI_EA
     RTS
 DO_MULS_W
     LEA     S_MULS_W,A3
