@@ -1,12 +1,13 @@
-*-----------------------------------------------------------
-* Title      : Opcode module
-* Written by : Clayton Snyder of Toucans
-* Date       : Created 5/16/2018
-* Description: One half of disassembly logic for a Motorola 68k disassembler.
-*              Reads the word at address A6 and identifies the opcode. Writes
-*              a string representing the opcode to the memory pointed to by A1
-*              then calls the EA decoding module. 
-*-----------------------------------------------------------
+*------------------------------------------------------------------------------|
+* Title      : Opcode module                                                   |
+* Written by : Audrey Chae, Clayton Snyder, Nicholas Gorsline (Team Toucans)   |
+* Creted     : 5/16/2018                                                       |
+* Description: One half of disassembly logic for a Motorola 68k disassembler.  |
+*              Reads the word at address A6 and identifies the opcode. Writes  |
+*              a string representing the opcode to the memory pointed to by A4 |
+*              then calls the appropriate subroutine from the EA module to     |
+*              the effective addressing modes for the op-code.                 |
+*------------------------------------------------------------------------------|
 
 ;; ~*~*~*~*~*~*~*~BEGIN OPCODE MODULE~*~*~*~*~*~*~*~
 

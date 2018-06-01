@@ -1,11 +1,11 @@
-*-----------------------------------------------------------
-* Title      :  Disassembler I/O 
-* Written by :  Audrey Chae, Nicholas Gorsline, Clayton Snyder (Team Toucans)
-* Date       :  5/1/18
-* Description:  I/O module for the 68k disassembler project. Handles prompting
-*               user for input, getting input, converting input from ASCII to
-*               raw hex, and serves as the control for program flow.
-*-----------------------------------------------------------
+*------------------------------------------------------------------------------|
+* Title      :  I/O Module                                                     |
+* Written by :  Nicholas Gorsline, Audrey Chae, Clayton Snyder (Team Toucans)  |
+* Created    :  5/1/18                                                         |
+* Description:  I/O module for the 68k disassembler project. Handles prompting |
+*               user for input, getting input, converting input from ASCII to  |
+*               raw hex, and serves as the control for program flow.           |
+*------------------------------------------------------------------------------|
     ORG    $1000
 START:                  ; first instruction of program
 
@@ -15,9 +15,6 @@ START:                  ; first instruction of program
     MOVEA.L #DISM_CODE,A4
     ; Jump to logo print
     JSR     PRINT_TOUCAN 
-    
-GET_INPUT
-    JSR     CLEAR_D4D3D2D1
     ; Print the input prompt message and get input as a string from user
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
@@ -29,18 +26,8 @@ GET_INPUT
     ; Check if D1 is valid size, minimum 4 (user entered at least 4 hexa bits)
     CMP     #4,D1           * minimum of a word for the address
     BLT     ERROR_INV_INP   * branch to print the invalid input error msg
-    CMP     #6,D1
-    BGT     ERROR_INV_INP
     JSR     CONVERSION_LOOP * convert the starting address from ASCII to hex
-    
-    ; Check if the starting address is out of bounds
-    CMP.L   #START_OF_MEM,D2
-    BLT     ERROR_OUTSIDE_MEM
-    
-    ; Check if the starting address is even or odd
-    BTST.L  #00,D2
-    BNE     ERROR_ODD_START_ADDR
-    
+
     ; Starting address has been converted; store it in A6 and get end address
     MOVEA.L D2,A6           * A6 acts as iterator while disassembling
     CLR.L   D2              * prepare D2 to hold converted end address
@@ -56,13 +43,7 @@ GET_INPUT
     ; Check if D1 is valid size, minimum 4 (user entered at least 4 hexa bits)
     CMP     #4,D1           * minimum of a word for the address
     BLT     ERROR_INV_INP   * branch to print the invalid input error msg
-    CMP     #8,D1
-    BGT     ERROR_INV_INP
     JSR     CONVERSION_LOOP * convert the ending address
-    
-    ; Check to see if end address is inside allotted space
-    CMP.L   #END_OF_MEM,D2
-    BGT     ERROR_OUTSIDE_MEM
     
     ; Ending address has been converted; store it in A5
     MOVEA.L D2,A5           * compare A6 to A5 to know when to stop
@@ -77,16 +58,6 @@ INIT_LN
     MOVE.B  #19,LINE_COUNTER
     RTS
 ;; ~~~~~~~~END OF INITIALIZE LINE COUNTER~~~~~~~~
-
-
-;; ~~~~~~~~CLEAR D4 D3 D2 D1 REGISTERS~~~~~~~~
-CLEAR_D4D3D2D1
-    CLR     D4
-    CLR     D3
-    CLR     D2
-    CLR     D1
-    RTS
-;; ~~~~~~~~END OF CLEAR D4 D3 D2 D1 REGISTERS~~~~~~~~
 
 
 ;; ~~~~~~~~PRINT TEAM LOGO~~~~~~~~
@@ -207,26 +178,13 @@ ERROR_INV_INP ;; Prints the INVALID_INPUT error message to the console
     LEA     INVALID_INPUT,A1
     MOVE.B  #13,D0
     TRAP    #15
-    BRA     GET_INPUT
+    BRA     END_NOW
     
 ERROR_END_LTE_BEG ;; Prints END_LTE_BEG (end <= beginning) error to console.
     LEA     END_LTE_BEG,A1
     MOVE.B  #13,D0
     TRAP    #15
-    BRA     GET_INPUT
-    
-ERROR_OUTSIDE_MEM
-    LEA     OUTSIDE_MEM,A1
-    MOVE.B  #13,D0
-    TRAP    #15
-    BRA     GET_INPUT
-    
-ERROR_ODD_START_ADDR
-    LEA     ODD_ADDR_BD,A1
-    MOVE.B  #13,D0
-    TRAP    #15
-    BRA     GET_INPUT
-    
+    BRA     END_NOW
 ;; ~~~~~~~~END OF ERROR MESSAGES~~~~~~~~
   
   
@@ -398,14 +356,11 @@ ASC_NUM_MAX     EQU     $39     * ASCII key for 9
 ASC_CHAR_MIN    EQU     $41     * ASCII key for A
 ASC_CHAR_MAX    EQU     $46     * ASCII key for F
 
-START_OF_MEM    EQU     $000000   * The start of where memory can be loaded in
-END_OF_MEM      EQU     $FFFFFF   * The end of where memory can be loaded in
-
 ; Masks
 ADR_PR_MASK     EQU     %00000000000000000000000000001111
 
 ; Variables
-LINE_COUNTER    DS.B    * A place to store the data for counting printed lines
+LINE_COUNTER    DS.B    * A place to store the data for movem
 TEMP_INPUT      DS.B    * Reset where A1 is pointing when getting input
 
 ; Message strings
@@ -413,12 +368,10 @@ NEW_LINE        DC.B    '',0,CR,LF
 DONE_MSG        DC.B    'Done.',0
 INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
 END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex (START_OF_MEM to END_OF_MEM): $',0
-ADDR_PRMPT_END  DC.B    'Enter an ending address in hex  (START_OF_MEM to END_OF_MEM): $',0
-OUTSIDE_MEM     DC.B    'That memory location is outside of the allotted space.',0
+ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+ADDR_PRMPT_END  DC.B    'Enter an ending address in hex: $',0
 PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 RUN_AGAIN_STR   DC.B    'Would you like to disassemble another memory image? (y/n): ',0
-ODD_ADDR_BD     DC.B    'Starting address cannot be odd. Please only enter even start',0
 INV_CONT_MSG    DC.B    'Please enter (y/n) only...',0
 ENTER_TO_CONT   DC.B    'Press Enter to continue...',0
 
@@ -512,8 +465,17 @@ END_NOW
 ;; ~~~~~~~~END OF PRINT LOOP~~~~~~~~
 
 
-    
+
+
+
+
+
+
+
+
+
+
 *~Font name~Courier New~
-*~Font size~14~
+*~Font size~12~
 *~Tab type~1~
 *~Tab size~4~

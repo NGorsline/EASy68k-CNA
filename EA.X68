@@ -1,42 +1,27 @@
-*-----------------------------------------------------------
-* Title      : EA Module
-* Written by : Toucans (Audrey Chae, Nick Gorsline, Clayton Snyder)
-* Date       : 5/20/2018
-* Description: EA Module of the 68k disassembler
-*-----------------------------------------------------------
+*------------------------------------------------------------------------------|
+* Title      : EA Module                                                       |
+* Written by : Clayton Snyder, Audrey Chae, Nicholas Gorsline (Team Toucans)   |
+* Created    : 5/20/2018                                                       |
+* Description: One half of disassembly logic for a Motorola 68k disassembler.  |
+*              Provides subroutines for decoding and writing effective         |
+*              modes which can be used by the OP module after the op-code is   |
+*              written.                                                        |
+*------------------------------------------------------------------------------|
 
 
 ;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
 
 ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
 
-*** A3 -> Null-terminated string to write (load before calling)
 *** A4 -> Location in memory to write to
+*** D0 -> Holds mode #
+*** D6 -> Holds register #
+*** D7 -> Size code given by OP module ($00 -> byte, $01 -> word, $0A -> long)
 
-*** D0 -> Holds mode # (used by WRITE)
-*** D6 -> Holds register # (used by WRITE)
-
-
-; EA parsing for MOVE and MOVEA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MOVE and MOVEA parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 MOVE_EA
-
-;; *~*~*~*~*~*~*~ pSeUdOcOdE ~*~*~*~*~*~*~* ;;
-    * 1.) Mask 3 LSB into D6 (reg #)
-    * 2.) ROR 3 bits
-    * 3.) Mask 3 LSB into D0 (mode #)
-    * 4.) Call mode-specific buffer writer (DO_MODE -> write_mode_x)
-;; NOTES: there will be one mode-specific buffer writer for each mode.
-;; The routine will write mode-specific strings to the buffer in addition to
-;; the register number (converted to ASCII). Use A3 and A4 to do this.
-    * 5.) Write a comma
-    * 6.) ROR 3 bits
-    * 7.) Mask 3 LSB into D0 (mode #)
-    * 8.) ROR 3 bits
-    * 9.) Mask 3 LSB into D6 (reg #)
-    * 10.) Call mode-specific buffer writer
-    * 11.) Return to I/O module
-    
-
     *** DECODE SOURCE EA
     MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
@@ -63,7 +48,14 @@ MOVE_EA
     ** FINAL BUFFER STATE: MOVE.x         Xn,Xn
     
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
+
     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; LSd and ROd (register) parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 LSD_EA
     *** First, is source value in Dn or immediate value? Check bit 8
     ROL.W   #07,D5              * Rotate so bits 11-9 are 3 LSB
@@ -102,8 +94,14 @@ LSD_DEST
     MOVE.B  #00,D0              * Destination mode is always Dn Direct (000)
     JSR     DO_MODE
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
+    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CLR parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 CLR_EA
     MOVE.L  D5,D6               * Copy D5 into D6 for register masking
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds register number
@@ -112,8 +110,14 @@ CLR_EA
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
     JSR     DO_MODE
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
+    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ADDQ parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ADDQ_EA
     *** SOURCE decoding
     MOVE.W  D5,D6               * Copy the instruction into D6
@@ -142,9 +146,14 @@ ADDQ_GT_ZERO
     AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
     JSR     DO_MODE
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ADDA and LEA parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ADDA_LEA_EA
     *** DECODE SOURCE EA
     MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
@@ -167,8 +176,14 @@ ADDA_LEA_EA
     AND.W   #THREE_LSB_MASK,D6  * Mask the reg into D6
     JSR     DO_MODE
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
 
     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ADDI and SUBI parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ADDI_SUBI_EA
     *** Source EA will always be immediate data. Save D5 and let SR do the work
     MOVEM   D5,-(SP)
@@ -188,8 +203,14 @@ ADDI_SUBI_EA
     JSR     DO_MODE
     
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
+    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ADD and SUB parsing when source is Dn (otherwise use DR_ARITH_EA) ;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Checks bit 8 to see if bits 11-6 are source or destination for ADD and SUB
 ADD_SUB_EA
     BTST.L  #08,D5
@@ -220,13 +241,14 @@ ADD_SUB_EA
     JSR     DO_MODE             * Get source mode decoded and written to buffer
     
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
     
-    
-    
-    
-; EA parsing for ADD, SUB, MULS, MULU, and DIVU
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MULS, MULU, DIV, and certain cases for SUB and ADD parsing ;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 DR_ARITH_EA
     * First half of logic is similar to MOVE_EA
     
@@ -254,11 +276,14 @@ DR_ARITH_EA
     ** FINAL BUFFER STATE:  OPER.x      Xn,Dn
     
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
     
     
-    
-    
-; Finds mode stored in D6 and branches to appropriate SR to write to the buffer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; DO_MODE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Branch to appropriate writing subroutine based on the mode in D0 ;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 DO_MODE
     CMP.B   #00,D0      ** Mode 0 - Data Register Direct
     BEQ     DR_DIRECT
@@ -292,7 +317,10 @@ DO_MODE
     
     RTS
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; DR_DIRECT AR_DIRECT AR_INDIRECT AR_POSTINC AR_PREDEC IMM_DATA ABSOLUTE ;;;;;;
+; Branch to appropriate writing subroutine based on the mode in D0 ;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 DR_DIRECT   *** Mode 0
     MOVE.B  #'D',(A4)+  * Write D to the buffer
     ADDI.B  #$30,D6     * Add $30 to the register number to convert to ASCII
@@ -347,8 +375,10 @@ ABSOLUTE
 
     
     
-    
-    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; GET/WRITE HARD DATA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+; Gets, converts, and writes hard data EA modes (absolute and immediate) ;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GW_HARD_DATA
     * Branch based on D7 size code(#0 = byte, #1 = word, #10 = long, decimal)
     CMPI.B  #00,D7
@@ -422,11 +452,12 @@ LCOND_CHECK
     RTS
 
 
+
+
 *** MASKS
 THREE_LSB_MASK  EQU     %0000000000000111
 
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
-*??
 
     END    START        ; last line of source
 
