@@ -104,6 +104,60 @@ LSD_DEST
     RTS
     
     
+ADDQ_EA
+    *** SOURCE decoding
+    MOVE.W  D5,D6               * Copy the instruction into D6
+    ROL.W   #07,D6              * Rotate so that the data (1-8) is 3 LSB
+    AND.W   #THREE_LSB_MASK,D6  * Mask the 3 LSB; this is the immediate data
+    
+    MOVE.B  #'#',(A4)+          * Write # to the buffer for imm. data
+    CMP.B   #00,D6              * 000 = 8 for this opcode...
+    BGT     ADDQ_GT_ZERO
+    ADDI.B  #08,D6              * ...so add 8 before moving on if it's 0.
+    
+ADDQ_GT_ZERO
+    ADDI.B  #$30,D6             * Convert to ASCII (can't be >8, so no letters)
+    MOVE.B  #'0',(A4)+          * Write 0 preceding the ASCII digit
+    MOVE.B  D6,(A4)+            * Write the ASCII byte
+    
+    MOVE.B  #',',(A4)+          * Write a comma
+    
+    ** CURRENT BUFFER STATE: ADDQ   
+    
+    *** DESTINATION decoding
+    MOVE.L  D5,D6               * Copy D5 into D6 for register masking
+    AND.W   #THREE_LSB_MASK,D6  * Mask regsiter into D6
+    ROR.W   #03,D5              * Rotate so mode is in 3 LSB
+    MOVE.L  D5,D0               * Copy D5 into D0 for mode masking
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
+    JSR     DO_MODE
+    RTS
+    
+    
+    
+ADDA_LEA_EA
+    *** DECODE SOURCE EA
+    MOVE.L  D5,D6               * D6 will be masked to hold only 3 LSB (reg #)
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds source register #
+    ROR.W   #3,D5               * rotate by 3 bits. mode should now be 3 LSB
+    MOVE.L  D5,D0               * D0 will hold the mode
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds source mode code
+    MOVEM   D5,-(SP)            * Save the contents of D5 so DO_MODE can use it
+    JSR     DO_MODE             * Get source mode decoded and written to buffer
+    MOVEM   (SP)+,D5            * Restore the value of D5
+    
+    ** CURRENT BUFFER STATE: ADDA.x     Xn
+    
+    MOVE.B  #',',(A4)+          * Write a comma between modes
+    
+    *** DECODE DEST EA (always AR direct)
+    MOVE.B  #01,D0              * Set D0 to represent AR direct
+    ROR.W   #06,D5              * Rotate six bits right so reg is 3 LSB
+    MOVE.W  D5,D6               * Copy D5 to D6
+    AND.W   #THREE_LSB_MASK,D6  * Mask the reg into D6
+    JSR     DO_MODE
+    RTS
+
     
 ADDI_SUBI_EA
     *** Source EA will always be immediate data. Save D5 and let SR do the work
@@ -365,6 +419,7 @@ THREE_LSB_MASK  EQU     %0000000000000111
 *??
 
     END    START        ; last line of source
+
 
 
 

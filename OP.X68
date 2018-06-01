@@ -465,13 +465,13 @@ DO_ADDA_W
     LEA     S_ADDA_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDA_LEA_EA
     RTS
 DO_ADDA_L
     LEA     S_ADDA_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     ADDA_LEA_EA
     RTS
 DO_ADDI
     MOVE.W  #ADDSUBI_S_MASK,D2
@@ -507,20 +507,20 @@ DO_ADDI_L
 DO_ADDQ_B
     LEA     S_ADDQ_B,A3
      MOVE.B  #00,D7          * passing size code BYTE to EA
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     ADDQ_EA
     RTS
 DO_ADDQ_W
     LEA     S_ADDQ_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     ADDQ_EA
     RTS
 DO_ADDQ_L
     LEA     S_ADDQ_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
-    ** Eventually, EA Module will be called here
     JSR     WRITE
+    JSR     ADDQ_EA
     RTS
 DO_SUB_B
     LEA     S_SUB_B,A3
@@ -593,6 +593,7 @@ DO_LEA
     LEA     S_LEA,A3    * Load the NOP string into A3 for WRITE subroutine
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     ADDA_LEA_EA
     RTS
 DO_CLR_B
     LEA     S_CLR_B,A3
@@ -936,6 +937,7 @@ AND_MM_MASK     EQU     %0000000111000000
 R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
 
 
 
