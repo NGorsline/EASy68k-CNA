@@ -716,31 +716,37 @@ DO_ROL_B
     LEA     S_ROL_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ROL_W
     LEA     S_ROL_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ROL_L
     LEA     S_ROL_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ROR_B
     LEA     S_ROR_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ROR_W
     LEA     S_ROR_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_ROR_L
     LEA     S_ROR_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
+    JSR     LSD_EA
     RTS
 DO_CMP_B
     LEA     S_CMP_B,A3
@@ -930,6 +936,7 @@ AND_MM_MASK     EQU     %0000000111000000
 R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
 
 
 
