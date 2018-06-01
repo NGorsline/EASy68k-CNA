@@ -212,7 +212,7 @@ ADDI_SUBI_EA
 ; ADD and SUB parsing when source is Dn (otherwise use DR_ARITH_EA) ;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Checks bit 8 to see if bits 11-6 are source or destination for ADD and SUB
-ADD_SUB_EA
+ADD_SUB_AND_OR_EA
     BTST.L  #08,D5
     BEQ     DR_ARITH_EA         * if bit 8 is clear, DR_ARITH_EA logic works
     
@@ -278,7 +278,8 @@ DR_ARITH_EA
     RTS
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
-    
+
+
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; DO_MODE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
