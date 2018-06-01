@@ -599,19 +599,19 @@ DO_CLR_B
     LEA     S_CLR_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
     JSR     WRITE
-    ** Eventually, EA Module will be called here
+    JSR     CLR_EA
     RTS
 DO_CLR_W
     LEA     S_CLR_W,A3
     MOVE.B  #01,D7          * passing size code WORD to EA      
     JSR     WRITE
-    ** Eventually, EA Module will be called here
+    JSR     CLR_EA
     RTS
 DO_CLR_L
     LEA     S_CLR_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
     JSR     WRITE
-    ** Eventually, EA Module will be called here
+    JSR     CLR_EA
     RTS
 DO_AND_B
     LEA     S_AND_B,A3

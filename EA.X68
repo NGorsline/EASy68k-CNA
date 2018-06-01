@@ -104,6 +104,16 @@ LSD_DEST
     RTS
     
     
+CLR_EA
+    MOVE.L  D5,D6               * Copy D5 into D6 for register masking
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds register number
+    ROR.W   #03,D5              * Rotate so mode is 3 LSB
+    MOVE.L  D5,D0               * Copy D5 into D0 for mode masking
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
+    JSR     DO_MODE
+    RTS
+    
+    
 ADDQ_EA
     *** SOURCE decoding
     MOVE.W  D5,D6               * Copy the instruction into D6
