@@ -52,7 +52,51 @@ MOVE_EA
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MOVEQ parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+MOVEQ_EA
+    *** DECODE SOURCE EA
+    * Source of MOVEQ is always one byte of immediate data. This has to be 
+    * manually coded because the data is in the opcode, not in memory.
+    MOVE.B  #'#',(A4)+          * Write $ to the buffer to indicate imm data
+    MOVE.B  #'$',(A4)+          * Write $ to the buffer to indicate hex data
+    MOVE.B  D5,D6               * Copy D5 to D6 to mask the data out
+    ROR.B   #04,D6              * Rotate so MSB hexa bit is 4 LSB
+    AND.B   #%00001111,D6       * Mask the last four bits
+    CMP.B   #$A,D6              * Check value for correct ASCII conversion
+    BLT     NO_EXTRA            * Don't add extra 7 if it's a digit
+    ADDI.B  #$07,D6             * Add extra 7 if it's a character
+NO_EXTRA
+    ADDI.B  #$30,D6             * Convert to ASCII
+    MOVE.B  D6,(A4)+            * Write the conveted ASCII character
+
+    MOVE.B  D5,D6               * Restore D6 (won't be rotated this time)
+    AND.B   #%00001111,D6       * Mask the last four bits
+    CMP.B   #$A,D6              * Check value for correct ASCII conversion
+    BLT     NO_EXTRA_2          * Don't add extra 7 if it's a digit
+    ADDI.B  #$07,D6             * Add extra 7 if it's a character
+NO_EXTRA_2
+    ADDI.B  #$30,D6
+    MOVE.B  D6,(A4)+
+
+    *** CURRENT BUFFER STATE: MOVEQ     #<data>
     
+    MOVE.B  #',',(A4)+
+
+    *** DECODE DESTINATION EA
+    ROL.W   #07,D5              * Rotate so that destination register is 3 LSB
+    MOVE.W  D5,D6               * Copy D5 to D6 for masking
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds destination register number
+    MOVE.B  #00,D0              * DR Direct (000) for the mode
+    JSR     DO_MODE
+    RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~    
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LSd and ROd (register) parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -212,7 +256,7 @@ ADDI_SUBI_EA
 ; ADD and SUB parsing when source is Dn (otherwise use DR_ARITH_EA) ;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Checks bit 8 to see if bits 11-6 are source or destination for ADD and SUB
-ADD_SUB_AND_OR_EA
+ADD_SUB_AND_OR_CMP_EA
     BTST.L  #08,D5
     BEQ     DR_ARITH_EA         * if bit 8 is clear, DR_ARITH_EA logic works
     
@@ -315,8 +359,11 @@ DO_MODE
     * here, must be absolute word. check if word or long-word addressing range
     
     BRA     ABSOLUTE
-    
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; DR_DIRECT AR_DIRECT AR_INDIRECT AR_POSTINC AR_PREDEC IMM_DATA ABSOLUTE ;;;;;;
@@ -373,8 +420,10 @@ ABSOLUTE
     CMP.B   #00,D6
     BEQ     WORD
     BRA     LONG
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 
-    
+
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; GET/WRITE HARD DATA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -451,16 +500,18 @@ LCOND_CHECK
     CMP.B   #00,D3      * check if counter has gone to zero
     BGT     LC_LOOP     * if not, keep looping
     RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 
 
 
 
-*** MASKS
 THREE_LSB_MASK  EQU     %0000000000000111
 
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
 
     END    START        ; last line of source
+
 
 
 
