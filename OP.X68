@@ -104,7 +104,7 @@ OIOX_BRA
 OIIX_BRA
     *check for MOVEQ and BCC here, which is 0110 always. there is no 0111
     BTST.L  #12,D5
-    BEQ     DO_Bcc            * BCC happens here, have to narrow it down to which one!
+    BEQ     DO_BCC_CASE            * BCC happens here, have to narrow it down to which one!
     BRA     DO_MOVEQ   
 OIOO_BRA
     ** Test for JSR
@@ -424,13 +424,13 @@ DO_BCC_CASE
     MOVE.W  #Bcc_MASK,D2
     AND     D5,D2
     CMP.W   #$0E00,D2                * Is it BGT?
-    BEQ     DO_BGT
+    BEQ     DO_BGT_SIZE
     
     CMP.W   #$0F00,D2                * Is it BLE?
-    BEQ     DO_BLE
+    BEQ     DO_BLE_SIZE
 
     CMP.W   #$0400,D2                * Is it BCC?
-    BEQ     DO_BCC
+    BEQ     DO_BCC_SIZE
 
     BRA     PRINT_INVALID_MSG        * none of these options? not required or invalid
 DO_MOVEM_W
@@ -770,23 +770,47 @@ DO_CMP_L
     JSR     WRITE
     JSR     ADD_SUB_AND_OR_CMP_EA
     RTS
-DO_BGT
-    LEA     S_BGT,A3
-    MOVE.B  #10,D7
+DO_BGT_SIZE
+    TST.B   D5              * test a byte from D5, the displacement bits of the Branch
+    BEQ.S   DO_BGT_W        * if the displacement byte = 0, then it's a word
+    LEA     S_BGT_B,A3      * if not a word, it's a byte size
+    MOVE.B  #00,D7
     JSR     WRITE
     ** EA Module will be called now
     RTS
-DO_BLE
-    LEA     S_BLE,A3
-    MOVE.B  #10,D7
+DO_BGT_W
+    LEA     S_BGT_W,A3
+    MOVE.B  #01,D7
     JSR     WRITE
     ** EA Module will be called now
     RTS
-DO_BCC
-    LEA     S_BCC,A3
-    MOVE.B  #10,D7
-    ** EA Module will be called now
+DO_BLE_SIZE
+    TST.B   D5              * test a byte from D5, the displacement bits of the Branch
+    BEQ.S   DO_BLE_W        * if the displacement byte = 0, then it's a word
+    LEA     S_BLE_B,A3      * if not a word, it's a byte size
+    MOVE.B  #00,D7
     JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BLE_W
+    LEA     S_BLE_W,A3
+    MOVE.B  #01,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BCC_SIZE
+    TST.B   D5              * test a byte from D5, the displacement bits of the Branch
+    BEQ.S   DO_BCC_W        * if the displacement byte = 0, then it's a word
+    LEA     S_BCC_B,A3      * if not a word, it's a byte size
+    MOVE.B  #00,D7
+    JSR     WRITE
+    ** EA Module will be called now
+    RTS
+DO_BCC_W
+    LEA     S_BCC_W,A3
+    MOVE.B  #01,D7
+    JSR     WRITE
+    ** EA Module will be called now
     RTS
 DO_JSR 
     LEA     S_JSR,A3
@@ -855,11 +879,14 @@ S_SUBI_L    DC.B    'SUBI.L         ',0
 S_CLR_B     DC.B    'CLR.B          ',0
 S_CLR_W     DC.B    'CLR.W          ',0
 S_CLR_L     DC.B    'CLR.L          ',0
-S_LEA       DC.B    'LEA.L          ',0
+S_LEA       DC.B    'LEA            ',0
 S_MOVEQ     DC.B    'MOVEQ          ',0
-S_BGT       DC.B    'BGT            ',0
-S_BLE       DC.B    'BLE            ',0
-S_BCC       DC.B    'BCC            ',0
+S_BGT_B     DC.B    'BGT.B          ',0
+S_BGT_W     DC.B    'BGT.W          ',0
+S_BLE_B     DC.B    'BLE.B          ',0
+S_BLE_W     DC.B    'BLE.W          ',0
+S_BCC_B     DC.B    'BCC.B          ',0
+S_BCC_W     DC.B    'BCC.W          ',0
 S_MOVE_B    DC.B    'MOVE.B         ',0
 S_MOVE_W    DC.B    'MOVE.W         ',0
 S_MOVE_L    DC.B    'MOVE.L         ',0
