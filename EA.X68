@@ -100,7 +100,7 @@ NO_EXTRA_2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LSd and ROd (register) parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-LSD_EA
+ROT_EA
     *** First, is source value in Dn or immediate value? Check bit 8
     ROL.W   #07,D5              * Rotate so bits 11-9 are 3 LSB
     MOVE.L  D5,D6               * Move rotated word into D6 for masking
@@ -108,30 +108,30 @@ LSD_EA
     ROR.W   #07,D5              * Undo the previous rotation
     
     BTST.L  #05,D5              * Test bit 5 to detect size in Dn or immediate
-    BNE     LSD_PREP_MODE       * If 1, prep for call to DO_MODE
+    BNE     ROT_PREP_MODE       * If 1, prep for call to DO_MODE
     
     *** If i/r (bit 5) = 0, bits 11-9 represent immediate data. Can't use the
     *** IMM_DATA subroutine here because logic is unique.
     
     MOVE.B  #'#',(A4)+          * Write # to the buffer for imm. data
     CMP.B   #00,D6              * 000 = 8 for this opcode...
-    BGT     GT_ZERO
+    BGT     ROT_GT_ZERO
     ADDI.B  #08,D6              * ...so add 8 before moving on if it's 0.
 
-GT_ZERO
+ROT_GT_ZERO
     ADDI.B  #$30,D6             * Convert to ASCII (can't be >8, so no letters)
     MOVE.B  #'0',(A4)+          * Write 0 preceding the ASCII digit
     MOVE.B  D6,(A4)+            * Write the ASCII byte
-    BRA     LSD_DEST            * Skip past LST_PREP_MODE to write the dest
+    BRA     ROT_DEST            * Skip past LST_PREP_MODE to write the dest
     
-LSD_PREP_MODE
+ROT_PREP_MODE
     *** Here, we prepare registers for a call to DO_MODE to write source EA
     MOVE.B  #00,D0              * Set D0 to hold Dn Direct mode (000)
     MOVEM   D5,-(SP)
     JSR     DO_MODE
     MOVEM   (SP)+,D5
     
-LSD_DEST
+ROT_DEST
     MOVE.B  #',',(A4)+          * Write a comma between EA modes
     MOVE.L  D5,D6               * Copy D5 into D6
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds dest register number
@@ -511,6 +511,7 @@ THREE_LSB_MASK  EQU     %0000000000000111
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
 
     END    START        ; last line of source
+
 
 
 
