@@ -319,6 +319,9 @@ DO_LSd
 
     CMP.W   #$0180,D2           * LSL.L
     BEQ     DO_LSL_L
+    
+    CMP.W   #$01C0,D2           * LSL.W <ea> (memory shift)
+    BEQ     DO_LSL_MEM
 
     *-- Starting right checks --*
     CMP.W   #$0000,D2           * LSR.B 
@@ -329,6 +332,9 @@ DO_LSd
 
     CMP.W   #$0080,D2           * LSR.L
     BEQ     DO_LSR_L
+    
+    CMP.W   #$00C0,D2           * LSR.W <ea> (memory shift)
+    BEQ     DO_LSR_MEM
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_ROd
@@ -344,6 +350,9 @@ DO_ROd
     CMP.W   #$0180,D2           * ROL.L
     BEQ     DO_ROL_L
 
+    CMP.W   #$01C0,D2           * ROL.W <ea> (memory rotate)
+    BEQ     DO_ROL_MEM
+    
     *-- Starting right checks --*
     CMP.W   #$0000,D2           * ROR.B 
     BEQ     DO_ROR_B
@@ -353,6 +362,9 @@ DO_ROd
 
     CMP.W   #$0080,D2           * ROR.L
     BEQ     DO_ROR_L
+    
+    CMP.W   #$00C0,D2           * ROR.W <ea> (memory rotate)
+    BEQ     DO_ROR_MEM
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_ASd
@@ -367,6 +379,9 @@ DO_ASd
 
     CMP.W   #$0180,D2           * ASL.L
     BEQ     DO_ASL_L
+    
+    CMP.W   #$01C0,D2           * ASL.W <ea> (memory shift)
+    BEQ     DO_ASL_MEM
 
     *-- Starting right checks --*
     CMP.W   #$0000,D2           * ASR.B 
@@ -377,6 +392,9 @@ DO_ASd
 
     CMP.W   #$0080,D2           * ASR.L
     BEQ     DO_ASR_L
+    
+    CMP.W   #$00C0,D2           *ASR.W <ea> (memory shift)
+    BEQ     DO_ASR_MEM
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 DO_NOP
@@ -668,6 +686,12 @@ DO_LSL_L
     JSR     WRITE
     JSR     ROT_EA
     RTS
+DO_LSL_MEM
+    LEA     S_LSL_W,A3      * string for mem shift is LSL.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
 DO_LSR_B
     LEA     S_LSR_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
@@ -683,6 +707,12 @@ DO_LSR_W
 DO_LSR_L
     LEA     S_LSR_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
+DO_LSR_MEM
+    LEA     S_LSR_W,A3      * string for mem shift is LSR.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
     JSR     WRITE
     JSR     ROT_EA
     RTS
@@ -704,6 +734,12 @@ DO_ASR_L
     JSR     WRITE
     JSR     ROT_EA
     RTS
+DO_ASR_MEM
+    LEA     S_ASR_W,A3      * string for mem shift is ASR.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
 DO_ASL_B
     LEA     S_ASL_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
@@ -719,6 +755,12 @@ DO_ASL_W
 DO_ASL_L
     LEA     S_ASL_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
+DO_ASL_MEM
+    LEA     S_ASL_W,A3      * string for mem shift is ASL.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
     JSR     WRITE
     JSR     ROT_EA
     RTS
@@ -740,6 +782,12 @@ DO_ROL_L
     JSR     WRITE
     JSR     ROT_EA
     RTS
+DO_ROL_MEM
+    LEA     S_ROL_W,A3      * string for mem shift is ROL.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
 DO_ROR_B
     LEA     S_ROR_B,A3
     MOVE.B  #00,D7          * passing size code BYTE to EA    
@@ -755,6 +803,12 @@ DO_ROR_W
 DO_ROR_L
     LEA     S_ROR_L,A3
     MOVE.B  #10,D7          * passing size code LONG to EA 
+    JSR     WRITE
+    JSR     ROT_EA
+    RTS
+DO_ROR_MEM
+    LEA     S_ROR_W,A3      * string for mem shift is ROR.W
+    MOVE.B  #11,D7          * indicates memory shift for EA
     JSR     WRITE
     JSR     ROT_EA
     RTS

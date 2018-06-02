@@ -101,7 +101,19 @@ NO_EXTRA_2
 ; LSd and ROd (register) parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ROT_EA
-    *** First, is source value in Dn or immediate value? Check bit 8
+    *** First thing to do is check if register or memory rotate
+    CMP.B   #11,D7              * Size code 11 means it's memory rotate
+    BNE     ROT_NOT_MEM         * Skip past memory rotation logic if not
+    MOVE.W  D5,D6               * Move D5 into D6 for masking
+    AND.W   #THREE_LSB_MASK,D6  * D6 now holds register number
+    MOVE.W  D5,D0               * Copy D5 to D0 for masking
+    ROR.W   #03,D0              * Rotate so mode code is 3 LSB
+    AND.W   #THREE_LSB_MASK,D0  * D0 now holds mode code
+    JSR     DO_MODE
+    RTS
+
+ROT_NOT_MEM
+    *** Is source value in Dn or immediate value? Check bit 8
     ROL.W   #07,D5              * Rotate so bits 11-9 are 3 LSB
     MOVE.L  D5,D6               * Move rotated word into D6 for masking
     ANDI.W  #THREE_LSB_MASK,D6  * D6 holds either register or imm data
