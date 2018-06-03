@@ -10,7 +10,6 @@
 START:                  ; first instruction of program
 
 * Put program code here
-
     ; A4 will point at where we write disassembled code (use to write ASCII)
     MOVEA.L #DISM_CODE,A4
     ; Jump to logo print
@@ -19,6 +18,16 @@ START:                  ; first instruction of program
 GET_INPUT
     JSR     CLEAR_D4D3D2D1
     ; Print the input prompt message and get input as a string from user
+    LEA     PROMPT_1,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     PROMPT_2,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    LEA     PROMPT_3,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    
     LEA     ADDR_PRMPT_STRT,A1
     MOVE.B  #14,D0
     TRAP    #15
@@ -398,8 +407,8 @@ ASC_NUM_MAX     EQU     $39     * ASCII key for 9
 ASC_CHAR_MIN    EQU     $41     * ASCII key for A
 ASC_CHAR_MAX    EQU     $46     * ASCII key for F
 
-START_OF_MEM    EQU     $000000   * The start of where memory can be loaded in
-END_OF_MEM      EQU     $FFFFFF   * The end of where memory can be loaded in
+START_OF_MEM    EQU     $007000   * The start of where memory can be loaded in
+END_OF_MEM      EQU     $0F0000   * The end of where memory can be loaded in
 
 ; Masks
 ADR_PR_MASK     EQU     %00000000000000000000000000001111
@@ -413,8 +422,11 @@ NEW_LINE        DC.B    '',0,CR,LF
 DONE_MSG        DC.B    'Done.',0
 INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
 END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex (START_OF_MEM to END_OF_MEM): $',0
-ADDR_PRMPT_END  DC.B    'Enter an ending address in hex  (START_OF_MEM to END_OF_MEM): $',0
+PROMPT_1        DC.B    'Please enter hex values between 4-6 characters',0
+PROMPT_2        DC.B    'Use uppercase letters if entering hex',0
+PROMPT_3        DC.B    'Load program between 7000 and F0000',0
+ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
+ADDR_PRMPT_END  DC.B    'Enter an ending address in hex : $',0
 OUTSIDE_MEM     DC.B    'That memory location is outside of the allotted space.',0
 PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 RUN_AGAIN_STR   DC.B    'Would you like to disassemble another memory image? (y/n): ',0
@@ -444,7 +456,7 @@ TC15           DC.B '             `..     "   \ \',0
 TC16           DC.B '                `\ \/     `"',0
 TC17           DC.B '                  \ \ ',0
 
-DISM_CODE       EQU     $8000     * Where to write disassembled code
+DISM_CODE       EQU     $F0000     * Where to write disassembled code
     
     NOP                         * Ensures included files align on word boundary
 
@@ -513,6 +525,8 @@ END_NOW
 
 
     
+
+
 
 
 *~Font name~Courier New~
