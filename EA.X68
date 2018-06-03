@@ -337,6 +337,53 @@ DR_ARITH_EA
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Bcc parsing ;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+BCC_EA
+    MOVE.B  #'$',(A4)+           * Write hex indicator to buffer
+
+    * First, identify the type of displacement
+    CMP.B   #01,D7              * Word size
+    BEQ     BCC_WORD_EA
+    
+    ** Byte displacement here
+    CLR.L   D6
+    MOVE.B  D5,D6
+    MOVE.W  A6,D0               * Move address of Bcc command into D0 to add
+    ADD.L   D0,D6               * Add displacement to 
+    
+BCC_WORD_EA
+    MOVE.W  A6,D0               * Address A6 used to calculate address of label
+    CLR.L   D6
+    MOVE.W  (A6)+,D6            * Get the displacement word of the Bcc command
+    ADD.L   D0,D6               * Add displacement to Bcc addr (get label addr)
+    
+    ** Convert the new calculated displacement to ASCII and write
+    MOVE.B  #08,D3       * init counter for convert loop
+BCC_LC_LOOP
+    ROL.L   #04,D6      * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D6,D2       * copy freshly rotated data into D2 for masking
+    ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
+    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
+    BLT     BCC_LDIG_CONVERT * skip past 
+    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
+    BRA     BCC_LCOND_CHECK  * skip digit conversion
+BCC_LDIG_CONVERT
+    ADDI.B  #$30,D2     * add $30 to get an ASCII digit
+BCC_LCOND_CHECK
+    MOVE.B  D2,(A4)+    * write the converted ASCII byte
+    SUBI.B  #01,D3      * decrement the counter
+    CMP.B   #00,D3      * check if counter has gone to zero
+    BGT     BCC_LC_LOOP * if not, keep looping
+    
+    
+    RTS
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
+
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; DO_MODE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

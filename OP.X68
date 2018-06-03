@@ -883,13 +883,13 @@ DO_BCC_SIZE
     LEA     S_BCC_B,A3      * if not a word, it's a byte size
     MOVE.B  #00,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_BCC_W
     LEA     S_BCC_W,A3
     MOVE.B  #01,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_JSR 
     LEA     S_JSR,A3
@@ -1048,14 +1048,6 @@ R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate b
 R_MEM_MASK      EQU     %1111111011000000       * Checks for memory rotates
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
-
-
-
-
-
-
-
-
 *~Font name~Courier New~
 *~Font size~12~
 *~Tab type~1~
