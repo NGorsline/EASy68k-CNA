@@ -18,6 +18,10 @@ START:                  ; first instruction of program
 GET_INPUT
     JSR     CLEAR_D4D3D2D1
     ; Print the input prompt message and get input as a string from user
+    LEA     NEW_LINE,A1
+    MOVE.B  #13,D0
+    TRAP    #15
+    
     LEA     PROMPT_1,A1
     MOVE.B  #13,D0
     TRAP    #15
@@ -525,6 +529,7 @@ END_NOW
 
 
     
+
 
 
 
