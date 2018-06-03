@@ -894,7 +894,7 @@ DO_BCC_W
 DO_JSR 
     LEA     S_JSR,A3
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     JSR_EA
     RTS
 DO_RTS
     LEA     S_RTS,A3    * Load the RTS string into A3 for WRITE subroutine

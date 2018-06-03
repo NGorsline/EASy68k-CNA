@@ -104,6 +104,7 @@ ROT_EA
     *** First thing to do is check if register or memory rotate
     CMP.B   #11,D7              * Size code 11 means it's memory rotate
     BNE     ROT_NOT_MEM         * Skip past memory rotation logic if not
+JSR_EA                          * JSR can use this logic directly
     MOVE.W  D5,D6               * Move D5 into D6 for masking
     AND.W   #THREE_LSB_MASK,D6  * D6 now holds register number
     MOVE.W  D5,D0               * Copy D5 to D0 for masking
