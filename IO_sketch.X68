@@ -426,13 +426,12 @@ NEW_LINE        DC.B    '',0,CR,LF
 DONE_MSG        DC.B    'Done.',0
 INVALID_INPUT   DC.B    'Invalid input! Out of Range.',0
 END_LTE_BEG     DC.B    'Invalid input! End address is less than or equal to start address.',0  
-PROMPT_1        DC.B    'Please enter hex values between 4-6 characters',0
-PROMPT_2        DC.B    'Use uppercase letters if entering hex',0
-PROMPT_3        DC.B    'Load program between 7000 and F0000',0
-ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: $',0
-ADDR_PRMPT_END  DC.B    'Enter an ending address in hex : $',0
+PROMPT_1        DC.B    'Please enter an even hex address between 4-6 characters.',0
+PROMPT_2        DC.B    'Use only uppercase letters for the hex address.',0
+PROMPT_3        DC.B    'Load the program to disassemble between 0x7000 and 0xF0000',0
+ADDR_PRMPT_STRT DC.B    'Enter a starting address in hex: 0x',0
+ADDR_PRMPT_END  DC.B    'Enter an ending address in hex : 0x',0
 OUTSIDE_MEM     DC.B    'That memory location is outside of the allotted space.',0
-PRINT_IT_STRING DC.B    'I am a PRINT_IT string. It is printing time!',0
 RUN_AGAIN_STR   DC.B    'Would you like to disassemble another memory image? (y/n): ',0
 ODD_ADDR_BD     DC.B    'Starting address cannot be odd. Please only enter even start',0
 INV_CONT_MSG    DC.B    'Please enter (y/n) only...',0
@@ -529,6 +528,7 @@ END_NOW
 
 
     
+
 
 
 
