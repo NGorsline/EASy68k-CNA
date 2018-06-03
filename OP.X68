@@ -855,13 +855,13 @@ DO_BGT_SIZE
     LEA     S_BGT_B,A3      * if not a word, it's a byte size
     MOVE.B  #00,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_BGT_W
     LEA     S_BGT_W,A3
     MOVE.B  #01,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_BLE_SIZE
     TST.B   D5              * test a byte from D5, the displacement bits of the Branch
@@ -869,13 +869,13 @@ DO_BLE_SIZE
     LEA     S_BLE_B,A3      * if not a word, it's a byte size
     MOVE.B  #00,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_BLE_W
     LEA     S_BLE_W,A3
     MOVE.B  #01,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BCC_EA
     RTS
 DO_BCC_SIZE
     TST.B   D5              * test a byte from D5, the displacement bits of the Branch
@@ -901,23 +901,24 @@ DO_RTS
     JSR     WRITE
     RTS
 PRINT_INVALID_MSG
-    LEA     INVALID,A3
+    LEA     S_ERROR,A3
     MOVE.B  #0,D7
     JSR     WRITE
-     ** EA Module will be called now
+    JSR     BAD_DATA
     RTS
 PRINT_OIOO_ERROR
-    LEA     BAD_OIOO,A3
+    LEA     S_ERROR,A3
     MOVE.B  #0,D7
     JSR     WRITE
-    ** EA Module will be called now
+    JSR     BAD_DATA
     RTS
 PRINT_COME_BACK_MSG
-    LEA     COMEBK,A3
+    LEA     S_ERROR,A3
     MOVE.B  #0,D7
     JSR     WRITE
-     ** EA Module will be called now
+    JSR     BAD_DATA
     RTS
+    
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
@@ -941,6 +942,7 @@ CODE_RTS    EQU     $4E75
 A4_PREV     SET     $2000
 
 *** Strings for opcodes (write these to memory)
+S_ERROR     DC.B    'DATA           ',0
 * ----- Strings from LEFT (0) branch --------- *
 S_NOP       DC.B    'NOP            ',0
 S_RTS       DC.B    'RTS            ',0
@@ -1048,6 +1050,7 @@ R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate b
 R_MEM_MASK      EQU     %1111111011000000       * Checks for memory rotates
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
+
 *~Font name~Courier New~
 *~Font size~12~
 *~Tab type~1~

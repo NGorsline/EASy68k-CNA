@@ -8,15 +8,40 @@
 *              written.                                                        |
 *------------------------------------------------------------------------------|
 
-
-;;;;;;;;;;; HEY HELLO HEY -----> WRITE A NULL TERM AT END OF DECODING A CMD!!! <------
-
 ;; ~*~*~*~*~*~*~*~BEGIN EA MODULE~*~*~*~*~*~*~*~
 
 *** A4 -> Location in memory to write to
 *** D0 -> Holds mode #
 *** D6 -> Holds register #
 *** D7 -> Size code given by OP module ($00 -> byte, $01 -> word, $0A -> long)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Invalid op-code ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+BAD_DATA
+    MOVE.B  #'$',(A4)+
+    MOVE.B  #04,D3      * init counter for convert loop
+BD_WC_LOOP
+    ROL.W   #04,D5      * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
+    ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
+    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
+    BLT     BD_WDIG_CONVERT * skip past 
+    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
+    BRA     BD_WCOND_CHECK  * skip digit conversion
+BD_WDIG_CONVERT
+    ADDI.B  #$30,D2     * add $30 to get an ASCII digit
+BD_WCOND_CHECK
+    MOVE.B  D2,(A4)+    * write the converted ASCII byte
+    SUBI.B  #01,D3      * decrement the counter
+    CMP.B   #00,D3      * check if counter has gone to zero
+    BGT     BD_WC_LOOP     * if not, keep looping
+    RTS 
+    
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MOVE and MOVEA parsing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -569,6 +594,7 @@ LCOND_CHECK
 THREE_LSB_MASK  EQU     %0000000000000111
 
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
+
 
 
 
