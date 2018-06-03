@@ -522,8 +522,6 @@ THREE_LSB_MASK  EQU     %0000000000000111
 
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
 
-    END    START        ; last line of source
-
 
 
 

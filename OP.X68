@@ -292,8 +292,24 @@ IIOI_BRA                        * Logic for ADDA, ADD,
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
+    ** First, check for memory rotates. Need to check this first, otherwise
+    ** ASd branch will be taken for LSd
+    MOVE.W  #R_MEM_MASK,D2      * Move mem rotate checking mask to D2
+    AND.W   D5,D2               * E0C0 = ASd, E2C0 = LSd, E6C0 = ROd
+    
+    CMP.W   #$E0C0,D2           * Is it ASd (mem)?
+    BEQ     DO_ASd
+
+    CMP.W   #$E2C0,D2           * Is it LSd (mem)?
+    BEQ     DO_LSd
+
+    CMP.W   #$E6C0,D2           * Is it ROd (mem)?
+    BEQ     DO_ROd 
+    
+    ** Now check for register rotates
     MOVE.W  #R_MODE_MASK,D2     * Initial rotation to differentiate between LSd, ROd, and ASd
     AND.W   D5,D2
+    
     CMP.W   #$0008,D2           * Is it LSd? (M = 01)
     BEQ     DO_LSd
 
@@ -302,6 +318,9 @@ IIIO_BRA                        * Logic for LSd, RSd, ROd,ASd
 
     CMP.W   #$0000,D2           * Is it ASd? (M = 00)
     BEQ     DO_ASd
+    
+    ** If it's none of the register rotates, check for memory rotates
+
 
     BRA     PRINT_INVALID_MSG   * none of these apply, then invalid op code 
 *------------------------------- END OF LEFT TREE ----------------------------------------
@@ -1026,6 +1045,7 @@ ADD_MASK        EQU     %0000000111000000
 SUB_MASK        EQU     %0000000111000000
 AND_MM_MASK     EQU     %0000000111000000
 R_MODE_MASK     EQU     %0000000000011000       * This one is to differentiate between LSd, ASd, and ROd
+R_MEM_MASK      EQU     %1111111011000000       * Checks for memory rotates
 ROTATION_MASK   EQU     %0000000111000000       * This mask will be used to find direction and size
 ;; ~*~*~*~*~*~*~*~END OPCODE MODULE~*~*~*~*~*~*~*~
 
