@@ -135,7 +135,7 @@ OIOO_BRA
     CMP.W   #$08C0,D2               * Is it MOVEM.L?
     BEQ     DO_MOVEM_L
 
-    BRA     PRINT_OIOO_ERROR       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
+    BRA     PRINT_INVALID_MSG       * if not RTS, not JSR, CLR, or LEA, then its invalid. 
 OIOI_BRA
     MOVE.W  #ADDQ_MASK,D2
     AND.W   D5,D2
@@ -906,19 +906,6 @@ PRINT_INVALID_MSG
     JSR     WRITE
     JSR     BAD_DATA
     RTS
-PRINT_OIOO_ERROR
-    LEA     S_ERROR,A3
-    MOVE.B  #0,D7
-    JSR     WRITE
-    JSR     BAD_DATA
-    RTS
-PRINT_COME_BACK_MSG
-    LEA     S_ERROR,A3
-    MOVE.B  #0,D7
-    JSR     WRITE
-    JSR     BAD_DATA
-    RTS
-    
 *** A3 -> String to write (load before calling)
 *** A4 -> Location in memory to write to 
 WRITE   * Writes string pointed to by A3 to memory pointed to by A1
@@ -1025,8 +1012,6 @@ S_ASR_W     DC.B    'ASR.W          ',0
 S_ASR_L     DC.B    'ASR.L          ',0
 * ---- Strings for messages ----- 
 INVALID     DC.B    'INVALID OPCODE. LETS FIX THIS MESSAGE LATER',0
-COMEBK      DC.B    'Come back to me pls dont forget me',0 
-BAD_OIOO    DC.B    'Bad OIOO maybe not JSR,RTS,CLR,LEA.. who knows.',0
 
 *------------------------------- END OF STRING CONSTANTS SECTION ------------------------------
 ***************************************************************************************

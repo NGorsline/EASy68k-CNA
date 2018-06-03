@@ -120,6 +120,223 @@ NO_EXTRA_2
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 ; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~    
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MOVEM parsing ;;;;;;;;;;;;;;;;;;NOT WORKING: WILL SPECIFY IN DOCUMENTATION;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+* MOVEM_EA
+*     * First obtain the MODE
+*     MOVE.W  #MOVEM_MODE_MASK,D0 * Store the mask in D0 to find the Mode
+*     AND.W   D5,D0               * Find out what the mode digits are
+*     ROR.W   #03,D0              * Rotate the last three 0's out to make mode LSB
+
+*     * Obtain the REGISTER
+*     MOVE.W  #THREE_LSB_MASK,D6  * Need to clear the bit at position 3 for register bits
+*     AND.W  D5,D6               * last 3 bits of D5 are already the register bits;
+    
+*     * Then Parse first word in D5 to find the dr
+*     BTST.L  #10,D5              * Bit position 10 contains the dr field         
+*     BEQ     MOVEM_REG_MEM       * Branch to the Register --> memory MOVEM logic
+*     BRA     MOVEM_MEM_REG       * Branch to the memory --> register MOVEM logic
+*     RTS                         * Not sure if this is the correct move
+* MOVEM_REG_MEM   * When dr = 0, code structure: MOVEM <list>, <ea> 
+*     MOVE.W  (A6)+,D5    * Load data
+*     * First, write Register List
+*     CMP.B   #04,D0  * Predecrement case has different register list mask order       
+*     BEQ     FIND_LIST_PREDECREMENT  * Finds the Register List in D0-D7/A0-A7 format
+*     BRA     FIND_LIST               * Finds the Register List in A7-A0/D7-D0 format 
+*     JSR     DO_MODE                 * Then write the <ea> portion
+*     RTS
+* MOVEM_MEM_REG   * When dr = 1, code structure: MOVEM <ea>,<list>
+*     MOVE.W  (A6)+,D5    * Load data
+
+*     * First, write the <ea> portion
+*     JSR     DO_MODE
+*                                     * Then, write Register List
+*     CMP.B   #04,D0                  * Predecrement case has different register list mask order       
+*     BEQ     FIND_LIST_PREDECREMENT  * Finds the Register List in D0-D7/A0-A7 format
+*     BRA     FIND_LIST               * Finds the Register List in A7-A0/D7-D0 format 
+*     RTS
+* * ------ Routine for finding PREDECREMENT Register list 
+* APPEND_A_REGS
+*     MOVE.B  #'(',(A4)+  * Write ( to the buffer
+*     MOVE.B  #'A',(A4)+  * Write A to the buffer
+*     SUBI.B  #07,D4      * WRITE bitPos-7
+*     MOVE.B  D4,(A4)+    * Write the ASCII-converted number to the buffer
+*     MOVE.B  #')',(A4)+  * Write ) to the buffer
+*     ADDI.B  #07,D4      * restore 
+*     RTS
+* APPEND_D_REGS
+*     MOVE.B  #'D',(A4)+      * write bitPos -15
+*     SUBI.B  #15,D4      
+*     MOVE.B  D4,(A4)+        * Write the ASCII-converted number to the buffer
+*     ADDI.B  #15,D4
+*     RTS
+* MAKE_LIST
+*     CMP.B   #08,D4          * If bit position >= 8, data register
+*     BGE     APPEND_D_REGS   * write data registers
+*     BRA     APPEND_A_REGS   * bit position < 8, address registers
+*     SUBI.B  #01,D4          * After it all, decrement bit position
+*     ADDI.B  #01,D3          *Increment sequence counter   
+* INNER_LOOP
+*     BTST.L  D4,D5           *check if bit at the bit position counter is 0
+*     BNE     CHECK_LIST      * = 1; A register of that number exists 
+* COMMA_LOOP                  * should make sure that there's no comma at the end 
+*     CMP.B   #00,D3          * If there hasn't been a sequence, skip over.
+*     BNE     PRINT_COMMA     * Previous sequence existed and is ending
+*     * No sequence existed, just skip over
+*     SUBI.B  #01,D4          * Moving on, looking at next 
+*     BRA     OUTER_COND      * Continue on with the loop   
+* PRINT_COMMA 
+*     MOVE.B  #',',(A4)+      * Write the comma in between separated registers
+*     CLR.L   D3              * clear the sequence counter
+*     SUBI.B  #01,D4          * decrement the bit position
+* OUTER_COND
+*     CMP.B   #08,D4          * check that the bit position hasn't reached 8 while (bitPos != limit)
+*     BGE     INNER_LOOP      * process for finding the data register list
+*     * Check if there was nothing done here before
+*     MOVE.B  #'/',(A4)+      * write the / for differentiating address and data registers
+*     BRA     INNER_LOOP      * process for finding address register
+* CHECK_LIST
+*     CMP.B   #00,D3          * check if sequence counter = 0
+*     BEQ     MAKE_LIST
+*     RTS
+* FIND_LIST_PREDECREMENT      * Finds and writes Register List in D0-D7/A0-A7
+*     MOVE.B  #15,D4          * bit position; starting from MSB -- > bit #15
+*     CLR.L   D3          * sequence counter; need to clear later
+*     BRA     OUTER_COND
+*     RTS
+* *------ End Predecrement Register List routine
+* *-----------------------------------------------------
+* *------ Routine for finding Register List 
+* APPEND_A_REGS_2
+*     MOVE.B  #'(',(A4)+  * Write ( to the buffer
+*     MOVE.B  #'A',(A4)+  * Write A to the buffer
+*     SUBI.B  #08,D4      * WRITE bitPos-8
+*     MOVE.B  D4,(A4)+    * Write the ASCII-converted number to the buffer
+*     MOVE.B  #')',(A4)+  * Write ) to the buffer
+*     ADDI.B  #08,D4      * Restore value 
+*     RTS
+* APPEND_D_REGS_2
+*     MOVE.B  #'D',(A4)+          * write bitPos -7
+*     SUBI.B  #07,D4      
+*     MOVE.B  D4,(A4)+            * Write the ASCII-converted number to the buffer
+*     ADDI.B  #07,D4              * Restore value 
+*     RTS
+* MAKE_LIST_2
+*     CMP.B   #08,D4              * If bit position >= 8, data register
+*     BGE     APPEND_D_REGS_2     * write data registers
+*     BRA     APPEND_A_REGS_2     * bit position < 8, address registers
+*     ADDI.B  #01,D4              * After it all, increment bit position
+*     ADDI.B  #01,D3              *Increment sequence counter   
+* INNER_LOOP_2
+*     BTST.L  D4,D5           *check if bit at the bit position counter is 0
+*     BNE     CHECK_LIST_2
+* COMMA_LOOP_2                  * should make sure that there's no comma at the end 
+*     MOVE.B  #',',(A4)+      * Write the comma in between separated registers 
+*     CLR.L   D3              * clear the sequence counter
+*     ADDI.B  #01,D4          * increment the bit position
+* OUTER_COND_2
+*     CMP.B   #08,D4          * check that the bit position hasn't reached 8 while (bitPos != limit)
+*     BGE     INNER_LOOP_2    * process for finding the data register list
+*     MOVE.B  #'/',(A4)+      * write the / for differentiating address and data registers
+*     BRA     INNER_LOOP_2    * process for finding address register
+* CHECK_LIST_2
+*     CMP.B   #00,D3          * check if sequence counter = 0
+*     BEQ     MAKE_LIST_2
+*     RTS
+* FIND_LIST               * Finds and writes Register List in A7-A0/D7-D0 format
+*     MOVE.B  #15,D4          * BIT POSITION; starting from MSB -- > bit #15
+*     CLR.L   D3          * sequence counter; need to clear later
+*     BRA     OUTER_COND_2
+*     RTS    
+
+ *------ End Register List routine
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+; ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~   
+
+*------ SECOND IDEA FOR MOVEM ---- *
+* DID NOT FINISH, WILL EXPLAIN IN DOCUMENTATION
+* MOVEM_EA
+* * First obtain the MODE
+*     MOVE.W  #MOVEM_MODE_MASK,D0 * Store the mask in D0 to find the Mode
+*     AND.W   D5,D0               * Find out what the mode digits are
+*     ROR.W   #03,D0              * Rotate the last three 0's out to make mode LSB
+
+*     * Obtain the REGISTER
+*     MOVE.W  #THREE_LSB_MASK,D6  * Need to clear the bit at position 3 for register bits
+*     AND.W  D5,D6                * last 3 bits of D5 are already the register bits;
+    
+*     * Then Parse first word in D5 to find the dr
+*     BTST.L  #10,D5              * Bit position 10 contains the dr field         
+*     BEQ     MOVEM_REG_MEM       * Branch to the Register --> memory MOVEM logic
+*     BRA     MOVEM_MEM_REG       * Branch to the memory --> register MOVEM logic
+*     RTS                         * Not sure if this is the correct move
+* MOVEM_REG_MEM   * dr = 0 = MOVEM <List> , <EA>
+*     JSR     LIST_FINDER
+*     * Need to pull another word before calling EA
+*     MOVE.W  (A6)+,D5
+*     JSR     DO_MODE
+* MOVEM_MEM_REG   * dr = 1 = MOVEM <EA> , <List> 
+*     JSR     DO_MODE
+*     JSR     LIST_FINDER
+* LIST_FINDER
+*     MOVE.W  (A6)+,D5    * Load data to be viewed
+*     CMP.B   #04,D0
+*     BEQ     D0_D7_A0_A7
+*     BRA     A7_A0_D7_D0
+*     RTS
+* PRINT_COMMA 
+*     MOVE.B  #',',(A4)+      * Write the comma in between separated registers
+*     CLR.L   D3              * clear the sequence counter
+*     SUBI.B  #01,D4          * decrement the bit position
+*     BRA     OUTER_LOOP  
+* DATA_WRITE
+*     MOVE.B  #'D',(A4)+      * write bitPos -15
+*     SUBI.B  #15,D4          * need this switches   
+*     MOVE.B  D4,(A4)+        * Write the ASCII-converted number to the buffer
+*     ADDI.B  #15,D4
+
+*     SUBI.B  #01,D4          * move right
+*     BRA     OUTER_LOOP      * continue to return 
+* WRITE_SLASH
+*     MOVE.B  #'/',(A4)+      * write the / for differentiating address and data registers
+*     BRA     ADDRESS_CONT    * return back to write the addressings 
+* ADDRESS_WRITE
+*     CMP.B   #07,D4          * did we just freshly enter into addresses?
+*     BEQ     WRITE_SLASH
+* ADDRESS_CONT
+*     MOVE.B  #'(',(A4)+  * Write ( to the buffer
+*     MOVE.B  #'A',(A4)+  * Write A to the buffer
+*     SUBI.B  #07,D4      * WRITE bitPos-7 * need this switched 
+*     MOVE.B  D4,(A4)+    * Write the ASCII-converted number to the buffer
+*     MOVE.B  #')',(A4)+  * Write ) to the buffer
+*     ADDI.B  #07,D4      * restore 
+
+*     SUBI.B  #01,D4          * move right
+*     BRA     OUTER_LOOP      * continue to return
+* CHECK_LIST  * position at byte position was 1 at this point
+*     CMP.B   #08,D4
+*     BGE     DATA_WRITE
+*     BRA     ADDRESS_WRITE
+* CHECK_SQN 
+*     CMP.B   #00,D3      * no previous sequence?
+*     BNE     PRINT_COMMA
+*     SUBI.B  #01,D4      * if == 0 ,do nothing
+*     BRA     OUTER_LOOP
+* INNER_LOOP
+*     BTST.L  D4,D5       * check the position of the loaded in word
+*     BNE     CHECK_LIST  * if =1, that position has a register
+*     * BRA     CHECK_SQN   * if = 0, check the sequence for commas   
+* OUTER_LOOP
+*     CMP.B   #00,D4      * while it's still searching
+*     BGE     INNER_LOOP  * check for required registers 
+*     RTS                 * leave if finished 
+* D0_D7_A0_A7     * Formats in D0-D7/A0-A7 style for indirect, post-decrement 
+*     * first check to see if any register portion is 0
+*     MOVE.B  #15,D4  * bit position
+*     CLR.L   D3      * sequence counter
+*     BRA     OUTER_LOOP
+* A7_A0_D7_D0     * Formats in A7-A0/D7-D0 style for others
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -547,15 +764,15 @@ BCOND_CHECK
 
 WORD
     MOVE.W  (A6)+,D5
-    MOVE.B  #04,D3       * init counter for convert loop
+    MOVE.B  #04,D3          * init counter for convert loop
 WC_LOOP
-    ROL.W   #04,D5      * rotate MSHB to LSBH to mask and convert
-    MOVE.B  D5,D2       * copy freshly rotated data into D2 for masking
+    ROL.W   #04,D5          * rotate MSHB to LSBH to mask and convert
+    MOVE.B  D5,D2           * copy freshly rotated data into D2 for masking
     ANDI.B  #%00001111,D2   * mask just the last hex bit into D2
-    CMPI.B  #$0A,D2     * check if should convert to ASCII digit or letter
-    BLT     WDIG_CONVERT * skip past 
-    ADDI.B  #$37,D2     * add $37 to get an ASCII letter
-    BRA     WCOND_CHECK  * skip digit conversion
+    CMPI.B  #$0A,D2         * check if should convert to ASCII digit or letter
+    BLT     WDIG_CONVERT    * skip past 
+    ADDI.B  #$37,D2         * add $37 to get an ASCII letter
+    BRA     WCOND_CHECK     * skip digit conversion
 WDIG_CONVERT
     ADDI.B  #$30,D2     * add $30 to get an ASCII digit
 WCOND_CHECK
@@ -592,7 +809,7 @@ LCOND_CHECK
 
 
 THREE_LSB_MASK  EQU     %0000000000000111
-
+MOVEM_MODE_MASK EQU     %0000000000111000
 ;; ~*~*~*~*~*~*~*~END EA MODULE~*~*~*~*~*~*~*~
 
 

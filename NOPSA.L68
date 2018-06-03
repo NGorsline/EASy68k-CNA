@@ -1,6 +1,6 @@
 00000300 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 5/30/2018 11:58:29 PM
+Created On: 6/1/2018 3:24:57 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      : NOPs
@@ -12,107 +12,107 @@ Created On: 5/30/2018 11:58:29 PM
 00000300                             8  START:                  ; first instruction of program
 00000300  4EB9 00000306              9        JSR HAI
 00000306                            10  HAI
-00000306  4E71                      11        NOP
-00000308  1802                      12        MOVE.B  D2,D4
-0000030A  2A00                      13        MOVE.L  D0,D5
-0000030C  3E03                      14        MOVE.W  D3,D7
-0000030E  3449                      15        MOVEA.W A1,A2
-00000310  285B                      16        MOVEA.L (A3)+,A4
-00000312  2C65                      17        MOVEA.L -(A5),A6
-00000314  4E71                      18        NOP
-00000316  1201                      19        MOVE.B  D1,D1
-00000318  1805                      20        MOVE.B  D5,D4
-0000031A  1407                      21        MOVE.B  D7,D2
-0000031C                            22      
+00000306  4E71                      11      NOP
+00000308  1802                      12      MOVE.B  D2,D4
+0000030A  2A00                      13      MOVE.L  D0,D5
+0000030C  3E03                      14      MOVE.W  D3,D7
+0000030E  3449                      15      MOVEA.W A1,A2
+00000310  285B                      16      MOVEA.L (A3)+,A4
+00000312  2C65                      17      MOVEA.L -(A5),A6
+00000314  4E71                      18      NOP
+00000316  1201                      19      MOVE.B  D1,D1
+00000318  1805                      20      MOVE.B  D5,D4
+0000031A  1407                      21      MOVE.B  D7,D2
+0000031C                            22  
 0000031C                            23  
-0000031C  0405 0011                 24        SUBI.B  #$11,D5
-00000320  B03C 0011                 25        CMP.B   #$11,D0
-00000324  4205                      26        CLR.B   D5
-00000326  4242                      27        CLR.W   D2
-00000328  4283                      28        CLR.L   D3
-0000032A                            29        
-0000032A                            30            * ADD
-0000032A  D724                      31        ADD.B       D3,-(A4)
-0000032C  D624                      32        ADD.B       -(A4),D3
-0000032E  D242                      33        ADD.W       D2,D1
-00000330  D68A                      34        ADD.L       A2,D3
-00000332  D239 0000ABCD             35        ADD.B       $ABCD,D1
-00000338  D479 0000EFAB             36        ADD.W       $EFAB,D2
-0000033E  D7B9 0000CD00             37        ADD.L       D3,$CD00
-00000344                            38      
-00000344                            39      * SUB
-00000344  9925                      40        SUB.B       D4,-(A5)
-00000346  9E46                      41        SUB.W       D6,D7
-00000348  9C9D                      42        SUB.L       (A5)+,D6
-0000034A  9C79 0000ABCD             43        SUB.W       $ABCD,D6
-00000350  9239 0000ABCD             44        SUB.B       $ABCD,D1
-00000356  9479 0000EFAB             45        SUB.W       $EFAB,D2
-0000035C  96B9 0000CDEF             46        SUB.L       $CDEF,D3
-00000362  9379 0000FC00             47        SUB.W       D1,$FC00
-00000368                            48      
-00000368                            49        * MULS, MULU, DIVU
-00000368  C6E2                      50        MULU.W      -(A2),D3
-0000036A  CADC                      51        MULU.W      (A4)+,D5
-0000036C  8AF8 0300                 52        DIVU.W      $0300,D5
-00000370  8AF9 00008010             53        DIVU.W      $8010,D5
-00000376  8EDE                      54        DIVU.W      (A6)+,D7
-00000378  8AE6                      55        DIVU.W      -(A6),D5
-0000037A  86D4                      56        DIVU.W      (A4),D3
-0000037C  84F8 1234                 57        DIVU.W      $1234,D2
-00000380  C3D2                      58        MULS.W      (A2),D1
-00000382  C7E2                      59        MULS.W      -(A2),D3
-00000384  CBDC                      60        MULS.W      (A4)+,D5
-00000386  CBF8 5678                 61        MULS.W      $5678,D5
+0000031C  0405 0011                 24      SUBI.B  #$11,D5
+00000320  B03C 0011                 25      CMP.B   #$11,D0
+00000324  4205                      26      CLR.B   D5
+00000326  4242                      27      CLR.W   D2
+00000328  4283                      28      CLR.L   D3
+0000032A                            29      
+0000032A                            30          * ADD
+0000032A  D724                      31      ADD.B       D3,-(A4)
+0000032C  D624                      32      ADD.B       -(A4),D3
+0000032E  D242                      33      ADD.W       D2,D1
+00000330  D68A                      34      ADD.L       A2,D3
+00000332  D239 0000ABCD             35      ADD.B       $ABCD,D1
+00000338  D479 0000EFAB             36      ADD.W       $EFAB,D2
+0000033E  D7B9 0000CD00             37      ADD.L       D3,$CD00
+00000344                            38  
+00000344                            39  * SUB
+00000344  9925                      40      SUB.B       D4,-(A5)
+00000346  9E46                      41      SUB.W       D6,D7
+00000348  9C9D                      42      SUB.L       (A5)+,D6
+0000034A  9C79 0000ABCD             43      SUB.W       $ABCD,D6
+00000350  9239 0000ABCD             44      SUB.B       $ABCD,D1
+00000356  9479 0000EFAB             45      SUB.W       $EFAB,D2
+0000035C  96B9 0000CDEF             46      SUB.L       $CDEF,D3
+00000362  9379 0000FC00             47      SUB.W       D1,$FC00
+00000368                            48  
+00000368                            49      * MULS, MULU, DIVU
+00000368  C6E2                      50      MULU.W      -(A2),D3
+0000036A  CADC                      51      MULU.W      (A4)+,D5
+0000036C  8AF8 0300                 52      DIVU.W      $0300,D5
+00000370  8AF9 00008010             53      DIVU.W      $8010,D5
+00000376  8EDE                      54      DIVU.W      (A6)+,D7
+00000378  8AE6                      55      DIVU.W      -(A6),D5
+0000037A  86D4                      56      DIVU.W      (A4),D3
+0000037C  84F8 1234                 57      DIVU.W      $1234,D2
+00000380  C3D2                      58      MULS.W      (A2),D1
+00000382  C7E2                      59      MULS.W      -(A2),D3
+00000384  CBDC                      60      MULS.W      (A4)+,D5
+00000386  CBF8 5678                 61      MULS.W      $5678,D5
 0000038A                            62  
-0000038A  48B8 0002 0000            63        MOVEM.W D1,$0000
-00000390  48F8 0004 0001            64        MOVEM.L D2,$0001
-00000396  4E75                      65        RTS
-00000398  45F9 DC00FF00             66        LEA   $DC00FF00,A2
-0000039E  7EFF                      67        MOVEQ   #$FF,D7
-000003A0                            68     
-000003A0  B441                      69        CMP.W   D1,D2
-000003A2  6E00 FF62                 70        BGT     HAI
-000003A6  B481                      71        CMP.L   D1,D2
-000003A8  6F00 FF5C                 72        BLE     HAI
-000003AC  B401                      73        CMP.B   D1,D2
-000003AE  6400 FF56                 74        BCC     HAI  
-000003B2  1602                      75        MOVE.B  D2,D3
-000003B4  2803                      76        MOVE.L  D3,D4
-000003B6  3A04                      77        MOVE.W  D4,D5
-000003B8  8AC3                      78        DIVU.W  D3,D5
-000003BA  3652                      79        MOVEA.W (A2),A3
-000003BC  2A52                      80        MOVEA.L (A2),A5
-000003BE  8401                      81        OR.B    D1,D2
-000003C0  8642                      82        OR.W    D2,D3
-000003C2  8283                      83        OR.L    D3,D1
-000003C4                            84        
-000003C4  C202                      85        AND.B   D2,D1
-000003C6  C641                      86        AND.W   D1,D3
-000003C8  C481                      87        AND.L   D1,D2
+0000038A  48B8 0002 0000            63      MOVEM.W D1,$0000
+00000390  48F8 0004 0001            64      MOVEM.L D2,$0001
+00000396  4E75                      65      RTS
+00000398  45F9 DC00FF00             66      LEA $DC00FF00,A2
+0000039E  7EFF                      67      MOVEQ   #$FF,D7
+000003A0                            68  
+000003A0  B441                      69      CMP.W     D1,D2
+000003A2  6E00 FF62                 70      BGT     HAI
+000003A6  B481                      71      CMP.L     D1,D2
+000003A8  6F00 FF5C                 72      BLE     HAI
+000003AC  B401                      73      CMP.B     D1,D2
+000003AE  6400 FF56                 74      BCC     HAI  
+000003B2  1602                      75      MOVE.B  D2,D3
+000003B4  2803                      76      MOVE.L  D3,D4
+000003B6  3A04                      77      MOVE.W  D4,D5
+000003B8  8AC3                      78      DIVU.W  D3,D5
+000003BA  3652                      79      MOVEA.W (A2),A3
+000003BC  2A52                      80      MOVEA.L (A2),A5
+000003BE  8401                      81      OR.B    D1,D2
+000003C0  8642                      82      OR.W    D2,D3
+000003C2  8283                      83      OR.L    D3,D1
+000003C4                            84      
+000003C4  C202                      85      AND.B   D2,D1
+000003C6  C641                      86      AND.W   D1,D3
+000003C8  C481                      87      AND.L   D1,D2
 000003CA                            88  
-000003CA  E32A                      89        LSL.B   D1,D2
-000003CC  E56B                      90        LSL.W   D2,D3
-000003CE  E7AC                      91        LSL.L   D3,D4
+000003CA  E32A                      89      LSL.B   D1,D2
+000003CC  E56B                      90      LSL.W   D2,D3
+000003CE  E7AC                      91      LSL.L   D3,D4
 000003D0                            92  
-000003D0  E22A                      93        LSR.B   D1,D2
-000003D2  E46B                      94        LSR.W   D2,D3
-000003D4  E6AC                      95        LSR.L   D3,D4
+000003D0  E22A                      93      LSR.B   D1,D2
+000003D2  E46B                      94      LSR.W   D2,D3
+000003D4  E6AC                      95      LSR.L   D3,D4
 000003D6                            96  
-000003D6  E322                      97        ASL.B   D1,D2
-000003D8  E563                      98        ASL.W   D2,D3
-000003DA  E7A4                      99        ASL.L   D3,D4
+000003D6  E322                      97      ASL.B   D1,D2
+000003D8  E563                      98      ASL.W   D2,D3
+000003DA  E7A4                      99      ASL.L   D3,D4
 000003DC                           100  
-000003DC  E222                     101        ASR.B   D1,D2
-000003DE  E463                     102        ASR.W   D2,D3
-000003E0  E6A4                     103        ASR.L   D3,D4
+000003DC  E222                     101      ASR.B   D1,D2
+000003DE  E463                     102      ASR.W   D2,D3
+000003E0  E6A4                     103      ASR.L   D3,D4
 000003E2                           104  
-000003E2  E33A                     105        ROL.B   D1,D2
-000003E4  E57B                     106        ROL.W   D2,D3
-000003E6  E7BC                     107        ROL.L   D3,D4
+000003E2  E33A                     105      ROL.B   D1,D2
+000003E4  E57B                     106      ROL.W   D2,D3
+000003E6  E7BC                     107      ROL.L   D3,D4
 000003E8                           108  
-000003E8  E23A                     109        ROR.B   D1,D2
-000003EA  E47B                     110        ROR.W   D2,D3
-000003EC  E6BC                     111        ROR.L   D3,D4
+000003E8  E23A                     109      ROR.B   D1,D2
+000003EA  E47B                     110      ROR.W   D2,D3
+000003EC  E6BC                     111      ROR.L   D3,D4
 000003EE                           112  
 000003EE                           113  
 000003EE                           114  
