@@ -1,6 +1,7 @@
 # EASy68k-CNA
-Dis-ass-embler
-Test
+Disassembler
+
+To test, download IO_sketch.X68, OP.X68, and EA.X68. Run IO_sketch.X68, loading your data to disassemble as an S-record file.
 
 # Registers
 A0 - 
