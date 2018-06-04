@@ -1,5 +1,5 @@
 # EASy68k-CNA
-Disassembler
+Motorola 68k Disassembler
 
 To test, download IO_sketch.X68, OP.X68, and EA.X68. Run IO_sketch.X68, loading your data to disassemble as an S-record file.
 
